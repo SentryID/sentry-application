@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: sentry-authentication
+
+server:
+  port: 8081

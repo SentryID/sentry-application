@@ -1,6 +1,9 @@
 spring:
   application:
     name: sentry-backend
+  jpa:
+    hibernate:
+      ddl-auto: update
 
 server:
   port: 8080

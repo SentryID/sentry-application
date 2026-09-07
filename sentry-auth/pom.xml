@@ -9,10 +9,10 @@
 		<version>1.0.0</version>
 	</parent>
 
-	<artifactId>sentry-backend</artifactId>
+	<artifactId>sentry-auth</artifactId>
 	<packaging>jar</packaging>
-	<name>sentry-backend</name>
-	<description>REST API module responsible for the Sentry ID backend</description>
+	<name>sentry-auth</name>
+	<description>REST API module responsible for the Sentry ID authentication</description>
 
 	<dependencies>
 		<dependency>

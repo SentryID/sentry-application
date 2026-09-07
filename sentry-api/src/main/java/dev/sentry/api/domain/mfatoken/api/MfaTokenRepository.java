@@ -7,6 +7,4 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface MfaTokenRepository extends ListCrudRepository<MfaToken, Long>, JpaSpecificationExecutor<MfaToken> {
-
-    MfaToken findByToken(String token);
 }

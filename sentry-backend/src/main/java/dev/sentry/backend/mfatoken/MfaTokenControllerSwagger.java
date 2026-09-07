@@ -13,12 +13,11 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
-@Tag(name = "Tokens de MFA", description = "Operações de CRUD para tokens de autenticação multifator")
+@Tag(name = "Tokens de MFA", description = "Emissão e consumo de tokens de autenticação multifator")
 @RequestMapping("/mfa-tokens")
 public interface MfaTokenControllerSwagger {
 
@@ -35,24 +34,26 @@ public interface MfaTokenControllerSwagger {
     @GetMapping("/{id}")
     MfaTokenRest.Response findById(@PathVariable Long id);
 
-    @Operation(summary = "Cria um novo token de MFA")
+    @Operation(summary = "Emite um token de MFA",
+            description = "O valor do token é gerado pelo servidor e devolvido no corpo da resposta")
     @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Token criado com sucesso"),
-            @ApiResponse(responseCode = "400", description = "Dados inválidos"),
-            @ApiResponse(responseCode = "409", description = "Já existe um token de MFA com esse valor")
+            @ApiResponse(responseCode = "201", description = "Token emitido com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos")
     })
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    void save(@RequestBody @Valid MfaTokenRest.SaveRequest request);
+    MfaTokenRest.Response issue(@RequestBody @Valid MfaTokenRest.SaveRequest request);
 
-    @Operation(summary = "Atualiza um token de MFA existente")
+    @Operation(summary = "Consome um token de MFA", description = "Uso único: marca o token como utilizado")
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Token atualizado com sucesso"),
-            @ApiResponse(responseCode = "404", description = "Token de MFA não encontrado")
+            @ApiResponse(responseCode = "204", description = "Token consumido com sucesso"),
+            @ApiResponse(responseCode = "404", description = "Token de MFA não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Token já utilizado"),
+            @ApiResponse(responseCode = "410", description = "Token expirado")
     })
-    @PutMapping("/{id}")
+    @PostMapping("/{id}/consume")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    void update(@PathVariable Long id, @RequestBody @Valid MfaTokenRest.UpdateRequest request);
+    void consume(@PathVariable Long id);
 
     @Operation(summary = "Remove um token de MFA", description = "A tabela não tem exclusão lógica: o token é removido de fato")
     @ApiResponses({

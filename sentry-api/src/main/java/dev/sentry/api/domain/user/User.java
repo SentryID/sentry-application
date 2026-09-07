@@ -1,28 +1,23 @@
 package dev.sentry.api.domain.user;
 
+import dev.sentry.api.domain.shared.SoftDeletableEntity;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EntityListeners;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
 import java.util.UUID;
+import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.Setter;
-import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedBy;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.NoArgsConstructor;
 
 @Getter
-@Setter
 @Entity
 @Table(name = "users")
-@EntityListeners(AuditingEntityListener.class)
-public class User {
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class User extends SoftDeletableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,38 +30,40 @@ public class User {
     @Column(nullable = false)
     private String name;
 
-    @Column(name = "authentication_type")
-    private String authenticationType;
+    @Embedded
+    private Username username;
 
-    @Column(nullable = false, unique = true)
-    private String username;
+    @Embedded
+    private Email email;
 
-    private String password;
+    @Embedded
+    private Credentials credentials;
 
-    private String salt;
+    /** A senha entra em claro e sai derivada: não existe caminho que grave texto puro. */
+    public static User register(String name, Username username, Email email, String authenticationType,
+            String senhaEmClaro, Boolean isActive) {
+        User user = new User();
+        user.name = name;
+        user.username = username;
+        user.email = email;
+        user.credentials = Credentials.hash(senhaEmClaro, authenticationType);
+        user.changeActivation(isActive);
+        return user;
+    }
 
-    @Column(nullable = false, unique = true)
-    private String email;
+    /** O login não muda depois do cadastro, e a senha tem caminho próprio. */
+    public void update(String name, Email email, String authenticationType, Boolean isActive) {
+        this.name = name;
+        this.email = email;
+        this.credentials = credentials.withAuthenticationType(authenticationType);
+        changeActivation(isActive);
+    }
 
-    @Column(name = "is_active", nullable = false)
-    private Boolean isActive = true;
+    public void changePassword(String senhaEmClaro) {
+        this.credentials = Credentials.hash(senhaEmClaro, credentials.authenticationType());
+    }
 
-    @Column(name = "is_deleted", nullable = false)
-    private Boolean isDeleted = false;
-
-    @CreatedBy
-    @Column(name = "created_by", updatable = false)
-    private String createdBy;
-
-    @CreatedDate
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
-
-    @LastModifiedBy
-    @Column(name = "updated_by")
-    private String updatedBy;
-
-    @LastModifiedDate
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    public boolean matchesPassword(String senhaEmClaro) {
+        return credentials != null && credentials.matches(senhaEmClaro);
+    }
 }

@@ -2,6 +2,7 @@ package dev.sentry.api.domain.mfatoken.api;
 
 import dev.sentry.api.domain.mfatoken.MfaToken;
 import dev.sentry.api.utils.SortUtils;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
@@ -32,16 +33,17 @@ public class MfaTokenService {
         return mfaTokenMapper.toDto(getOrThrow(id));
     }
 
-    public void save(MfaTokenRest.SaveRequest mfaTokenRequest) {
-        if (mfaTokenRepository.findByToken(mfaTokenRequest.token()) != null) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Já existe um token de MFA com esse valor");
-        }
-        mfaTokenRepository.save(mfaTokenMapper.toEntity(mfaTokenRequest));
+    /** Devolve o token gerado — é a única chance de o chamador conhecer o valor. */
+    public MfaTokenRest.Response issue(MfaTokenRest.SaveRequest mfaTokenRequest) {
+        MfaToken mfaToken = MfaToken.issue(mfaTokenRequest.username(), mfaTokenRequest.code(),
+                mfaTokenRequest.validUntil());
+        return mfaTokenMapper.toDto(mfaTokenRepository.save(mfaToken));
     }
 
-    public void update(Long id, MfaTokenRest.UpdateRequest mfaTokenRequest) {
+    /** Uso único: a segunda chamada devolve 409, e um token vencido devolve 410. */
+    public void consume(Long id) {
         MfaToken mfaToken = getOrThrow(id);
-        mfaTokenMapper.updateEntity(mfaTokenRequest, mfaToken);
+        mfaToken.consume(LocalDateTime.now());
         mfaTokenRepository.save(mfaToken);
     }
 

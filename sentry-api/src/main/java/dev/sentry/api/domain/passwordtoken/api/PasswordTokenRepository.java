@@ -8,6 +8,4 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface PasswordTokenRepository
         extends ListCrudRepository<PasswordToken, Long>, JpaSpecificationExecutor<PasswordToken> {
-
-    PasswordToken findByToken(String token);
 }

@@ -33,7 +33,7 @@ public interface MfaTokenRest {
             Long id,
             @Schema(description = "Código enviado ao usuário", example = "123456")
             String code,
-            @Schema(description = "Token de identificação do desafio", example = "b7a1c3d4e5f6")
+            @Schema(description = "Token gerado pelo servidor", example = "b7a1c3d4e5f6")
             String token,
             @Schema(description = "Login do usuário", example = "maria.silva")
             String username,
@@ -47,25 +47,17 @@ public interface MfaTokenRest {
             LocalDateTime usedAt) {
     }
 
-    @Schema(description = "Requisição para criação de um token de MFA")
+    /**
+     * Sem o campo {@code token}: o valor é gerado pelo servidor e devolvido na resposta.
+     * Deixar o cliente escolher o token seria deixá-lo escolher o desafio da vítima.
+     */
+    @Schema(description = "Requisição para emissão de um token de MFA")
     record SaveRequest(
             @Schema(description = "Código enviado ao usuário", example = "123456", requiredMode = RequiredMode.REQUIRED)
             @NotBlank String code,
-            @Schema(description = "Token de identificação do desafio", example = "b7a1c3d4e5f6", requiredMode = RequiredMode.REQUIRED)
-            @NotBlank String token,
             @Schema(description = "Login do usuário", example = "maria.silva", requiredMode = RequiredMode.REQUIRED)
             @NotBlank String username,
             @Schema(description = "Data e hora limite de validade do token", example = "2026-02-20T14:10:00", requiredMode = RequiredMode.REQUIRED)
             @NotNull LocalDateTime validUntil) {
-    }
-
-    @Schema(description = "Requisição para atualização de um token de MFA")
-    record UpdateRequest(
-            @Schema(description = "Indica se o token já foi utilizado", example = "true", requiredMode = RequiredMode.REQUIRED)
-            @NotNull Boolean isUsed,
-            @Schema(description = "Data e hora limite de validade do token", example = "2026-02-20T14:10:00")
-            LocalDateTime validUntil,
-            @Schema(description = "Data e hora em que o token foi utilizado", example = "2026-02-20T14:07:00")
-            LocalDateTime usedAt) {
     }
 }

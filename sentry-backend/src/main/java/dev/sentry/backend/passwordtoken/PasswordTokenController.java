@@ -25,13 +25,13 @@ public class PasswordTokenController implements PasswordTokenControllerSwagger {
     }
 
     @Override
-    public void save(PasswordTokenRest.SaveRequest request) {
-        passwordTokenService.save(request);
+    public PasswordTokenRest.Response issue(PasswordTokenRest.SaveRequest request) {
+        return passwordTokenService.issue(request);
     }
 
     @Override
-    public void update(Long id, PasswordTokenRest.UpdateRequest request) {
-        passwordTokenService.update(id, request);
+    public void consume(Long id) {
+        passwordTokenService.consume(id);
     }
 
     @Override

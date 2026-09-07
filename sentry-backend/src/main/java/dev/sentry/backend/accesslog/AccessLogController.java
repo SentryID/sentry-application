@@ -28,14 +28,4 @@ public class AccessLogController implements AccessLogControllerSwagger {
     public void save(AccessLogRest.SaveRequest request) {
         accessLogService.save(request);
     }
-
-    @Override
-    public void update(Long id, AccessLogRest.UpdateRequest request) {
-        accessLogService.update(id, request);
-    }
-
-    @Override
-    public void delete(Long id) {
-        accessLogService.delete(id);
-    }
 }

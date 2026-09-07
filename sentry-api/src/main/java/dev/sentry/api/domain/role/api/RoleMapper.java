@@ -1,18 +1,20 @@
 package dev.sentry.api.domain.role.api;
 
 import dev.sentry.api.domain.role.Role;
-import org.mapstruct.BeanMapping;
+import dev.sentry.api.domain.role.RoleOption;
+import java.util.List;
 import org.mapstruct.Mapper;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.NullValuePropertyMappingStrategy;
 
+/**
+ * Só a direção de leitura. O {@code Response} do perfil não traz as opções — elas vêm
+ * pelo sub-recurso {@code /roles/{id}/options}, o que evita N+1 na listagem.
+ */
 @Mapper(componentModel = "spring")
 public interface RoleMapper {
 
     RoleRest.Response toDto(Role role);
 
-    Role toEntity(RoleRest.SaveRequest dto);
+    RoleRest.OptionResponse toOptionDto(RoleOption option);
 
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    void updateEntity(RoleRest.UpdateRequest dto, @MappingTarget Role entity);
+    List<RoleRest.OptionResponse> toOptionDtos(List<RoleOption> options);
 }

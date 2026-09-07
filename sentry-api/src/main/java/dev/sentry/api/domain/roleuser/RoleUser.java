@@ -1,27 +1,28 @@
 package dev.sentry.api.domain.roleuser;
 
+import dev.sentry.api.domain.shared.SoftDeletableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EntityListeners;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
+import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.Setter;
-import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedBy;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.NoArgsConstructor;
 
+/**
+ * Vínculo entre um grupo de perfis e um usuário.
+ *
+ * <p>Continua sendo uma associação simples, sem comportamento próprio: a invariante
+ * natural — usuário e perfil na mesma organização — depende da tabela {@code groups},
+ * que ainda não foi modelada.
+ */
 @Getter
-@Setter
 @Entity
 @Table(name = "role_users")
-@EntityListeners(AuditingEntityListener.class)
-public class RoleUser {
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class RoleUser extends SoftDeletableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,25 +35,17 @@ public class RoleUser {
     @Column(name = "id_user", nullable = false)
     private Long idUser;
 
-    @Column(name = "is_active", nullable = false)
-    private Boolean isActive = true;
+    public static RoleUser assign(Long idGroup, Long idUser, Boolean isActive) {
+        RoleUser roleUser = new RoleUser();
+        roleUser.idGroup = idGroup;
+        roleUser.idUser = idUser;
+        roleUser.changeActivation(isActive);
+        return roleUser;
+    }
 
-    @Column(name = "is_deleted", nullable = false)
-    private Boolean isDeleted = false;
-
-    @CreatedBy
-    @Column(name = "created_by", updatable = false)
-    private String createdBy;
-
-    @CreatedDate
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
-
-    @LastModifiedBy
-    @Column(name = "updated_by")
-    private String updatedBy;
-
-    @LastModifiedDate
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    public void update(Long idGroup, Long idUser, Boolean isActive) {
+        this.idGroup = idGroup;
+        this.idUser = idUser;
+        changeActivation(isActive);
+    }
 }

@@ -77,6 +77,26 @@ public interface RoleRest {
             @NotNull Boolean isActive) {
     }
 
+    @Schema(description = "Ação concedida a um perfil de acesso")
+    record OptionResponse(
+            @Schema(description = "Identificador interno da opção de perfil", example = "1")
+            Long id,
+            @Schema(description = "Código da ação concedida", example = "1")
+            Long cdAction,
+            @Schema(description = "Indica se a opção está ativa", example = "true")
+            Boolean isActive,
+            @Schema(description = "Usuário que criou o registro", example = "system")
+            String createdBy,
+            @Schema(description = "Data e hora de criação do registro", example = "2026-01-15T10:30:00")
+            LocalDateTime createdAt) {
+    }
+
+    @Schema(description = "Requisição para conceder uma ação a um perfil de acesso")
+    record GrantRequest(
+            @Schema(description = "Código da ação a conceder", example = "1", requiredMode = RequiredMode.REQUIRED)
+            @NotNull Long cdAction) {
+    }
+
     @Schema(description = "Requisição para atualização de um perfil de acesso")
     record UpdateRequest(
             @Schema(description = "Identificador interno do sistema", example = "1", requiredMode = RequiredMode.REQUIRED)

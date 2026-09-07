@@ -36,8 +36,7 @@ public class ActionService {
         if (actionRepository.findByIdSystemAndActionType(actionRequest.idSystem(), actionRequest.actionType()) != null) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Já existe uma ação desse tipo nesse sistema");
         }
-        actionRepository.save(
-                Action.create(actionRequest.actionType(), actionRequest.idSystem(), actionRequest.isActive()));
+        actionRepository.save(actionMapper.toEntity(actionRequest));
     }
 
     public void update(Long id, ActionRest.UpdateRequest actionRequest) {
@@ -47,13 +46,13 @@ public class ActionService {
         if (sameType != null && !sameType.getId().equals(id)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Já existe uma ação desse tipo nesse sistema");
         }
-        action.update(actionRequest.actionType(), actionRequest.idSystem(), actionRequest.isActive());
+        actionMapper.updateEntity(actionRequest, action);
         actionRepository.save(action);
     }
 
     public void delete(Long id) {
         Action action = getOrThrow(id);
-        action.delete();
+        action.setIsDeleted(true);
         actionRepository.save(action);
     }
 

@@ -37,20 +37,18 @@ public class OrganizationService {
                 && organizationRepository.findByExternalCode(organizationRequest.externalCode()) != null) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Já existe uma organização com esse código externo");
         }
-        organizationRepository.save(Organization.create(organizationRequest.name(),
-                organizationRequest.externalCode(), organizationRequest.isActive()));
+        organizationRepository.save(organizationMapper.toEntity(organizationRequest));
     }
 
     public void update(Long id, OrganizationRest.UpdateRequest organizationRequest) {
         Organization organization = getOrThrow(id);
-        organization.update(organizationRequest.name(), organizationRequest.externalCode(),
-                organizationRequest.isActive());
+        organizationMapper.updateEntity(organizationRequest, organization);
         organizationRepository.save(organization);
     }
 
     public void delete(Long id) {
         Organization organization = getOrThrow(id);
-        organization.delete();
+        organization.setIsDeleted(true);
         organizationRepository.save(organization);
     }
 

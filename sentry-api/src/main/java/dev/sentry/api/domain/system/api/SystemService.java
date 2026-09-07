@@ -37,8 +37,7 @@ public class SystemService {
                 && systemRepository.findByExternalCode(systemRequest.externalCode()) != null) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Já existe um sistema com esse código externo");
         }
-        systemRepository.save(System.create(systemRequest.idOrganization(), systemRequest.externalCode(),
-                systemRequest.description(), systemRequest.url(), systemRequest.scopes(), systemRequest.isActive()));
+        systemRepository.save(systemMapper.toEntity(systemRequest));
     }
 
     public void update(Long id, SystemRest.UpdateRequest systemRequest) {
@@ -49,14 +48,13 @@ public class SystemService {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Já existe um sistema com esse código externo");
             }
         }
-        system.update(systemRequest.idOrganization(), systemRequest.externalCode(), systemRequest.description(),
-                systemRequest.url(), systemRequest.scopes(), systemRequest.isActive());
+        systemMapper.updateEntity(systemRequest, system);
         systemRepository.save(system);
     }
 
     public void delete(Long id) {
         System system = getOrThrow(id);
-        system.delete();
+        system.setIsDeleted(true);
         systemRepository.save(system);
     }
 

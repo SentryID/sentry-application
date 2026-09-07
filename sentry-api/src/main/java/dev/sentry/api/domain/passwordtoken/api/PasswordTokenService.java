@@ -2,7 +2,6 @@ package dev.sentry.api.domain.passwordtoken.api;
 
 import dev.sentry.api.domain.passwordtoken.PasswordToken;
 import dev.sentry.api.utils.SortUtils;
-import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
@@ -34,17 +33,16 @@ public class PasswordTokenService {
         return passwordTokenMapper.toDto(getOrThrow(id));
     }
 
-    /** Devolve o token gerado — é a única chance de o chamador conhecer o valor. */
-    public PasswordTokenRest.Response issue(PasswordTokenRest.SaveRequest passwordTokenRequest) {
-        PasswordToken passwordToken =
-                PasswordToken.issue(passwordTokenRequest.idUser(), passwordTokenRequest.validUntil());
-        return passwordTokenMapper.toDto(passwordTokenRepository.save(passwordToken));
+    public void save(PasswordTokenRest.SaveRequest passwordTokenRequest) {
+        if (passwordTokenRepository.findByToken(passwordTokenRequest.token()) != null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Já existe um token de senha com esse valor");
+        }
+        passwordTokenRepository.save(passwordTokenMapper.toEntity(passwordTokenRequest));
     }
 
-    /** Uso único: a segunda chamada devolve 409, e um token vencido devolve 410. */
-    public void consume(Long id) {
+    public void update(Long id, PasswordTokenRest.UpdateRequest passwordTokenRequest) {
         PasswordToken passwordToken = getOrThrow(id);
-        passwordToken.consume(LocalDateTime.now());
+        passwordTokenMapper.updateEntity(passwordTokenRequest, passwordToken);
         passwordTokenRepository.save(passwordToken);
     }
 

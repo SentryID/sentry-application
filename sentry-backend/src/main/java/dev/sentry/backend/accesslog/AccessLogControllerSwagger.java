@@ -9,15 +9,16 @@ import jakarta.validation.Valid;
 import java.util.List;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
-/** Trilha de auditoria: só leitura e inserção. Não há {@code PUT} nem {@code DELETE}. */
-@Tag(name = "Logs de acesso", description = "Consulta e registro das tentativas de acesso")
+@Tag(name = "Logs de acesso", description = "Operações de CRUD para os logs de tentativa de acesso")
 @RequestMapping("/access-logs")
 public interface AccessLogControllerSwagger {
 
@@ -34,8 +35,7 @@ public interface AccessLogControllerSwagger {
     @GetMapping("/{id}")
     AccessLogRest.Response findById(@PathVariable Long id);
 
-    @Operation(summary = "Registra uma tentativa de acesso",
-            description = "A data e hora da tentativa é preenchida pelo servidor")
+    @Operation(summary = "Registra um novo log de acesso", description = "A data e hora da tentativa é preenchida automaticamente")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Log registrado com sucesso"),
             @ApiResponse(responseCode = "400", description = "Dados inválidos")
@@ -43,4 +43,22 @@ public interface AccessLogControllerSwagger {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     void save(@RequestBody @Valid AccessLogRest.SaveRequest request);
+
+    @Operation(summary = "Atualiza um log de acesso existente")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Log atualizado com sucesso"),
+            @ApiResponse(responseCode = "404", description = "Log de acesso não encontrado")
+    })
+    @PutMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void update(@PathVariable Long id, @RequestBody @Valid AccessLogRest.UpdateRequest request);
+
+    @Operation(summary = "Remove um log de acesso", description = "A tabela não tem exclusão lógica: o log é removido de fato")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Log removido com sucesso"),
+            @ApiResponse(responseCode = "404", description = "Log de acesso não encontrado")
+    })
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void delete(@PathVariable Long id);
 }

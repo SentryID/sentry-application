@@ -1,21 +1,27 @@
 package dev.sentry.api.domain.action;
 
-import dev.sentry.api.domain.shared.SoftDeletableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.AccessLevel;
+import java.time.LocalDateTime;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Getter
+@Setter
 @Entity
 @Table(name = "actions")
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Action extends SoftDeletableEntity {
+@EntityListeners(AuditingEntityListener.class)
+public class Action {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,17 +34,25 @@ public class Action extends SoftDeletableEntity {
     @Column(name = "id_system", nullable = false)
     private Long idSystem;
 
-    public static Action create(String actionType, Long idSystem, Boolean isActive) {
-        Action action = new Action();
-        action.actionType = actionType;
-        action.idSystem = idSystem;
-        action.changeActivation(isActive);
-        return action;
-    }
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
 
-    public void update(String actionType, Long idSystem, Boolean isActive) {
-        this.actionType = actionType;
-        this.idSystem = idSystem;
-        changeActivation(isActive);
-    }
+    @Column(name = "is_deleted", nullable = false)
+    private Boolean isDeleted = false;
+
+    @CreatedBy
+    @Column(name = "created_by", updatable = false)
+    private String createdBy;
+
+    @CreatedDate
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @LastModifiedBy
+    @Column(name = "updated_by")
+    private String updatedBy;
+
+    @LastModifiedDate
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 }

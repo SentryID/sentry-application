@@ -1,8 +1,8 @@
 package dev.sentry.api.domain.accesslog.api;
 
-import dev.sentry.api.domain.accesslog.AttemptResult;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
@@ -16,7 +16,7 @@ public interface AccessLogRest {
             @Schema(description = "Identificador interno do sistema", example = "1")
             Long idSystem,
             @Schema(description = "Resultado da tentativa de acesso", example = "SUCCESS")
-            AttemptResult attemptResult,
+            String attemptResult,
             @Schema(description = "Endereço IP ou host de origem (busca parcial)", example = "192.168.0.1")
             String ipHost,
             @Schema(description = "Data e hora inicial da tentativa", example = "2026-02-01T00:00:00")
@@ -40,20 +40,31 @@ public interface AccessLogRest {
             @Schema(description = "Data e hora da tentativa de acesso", example = "2026-02-20T14:05:00")
             LocalDateTime attemptedAt,
             @Schema(description = "Resultado da tentativa de acesso", example = "SUCCESS")
-            AttemptResult attemptResult,
+            String attemptResult,
             @Schema(description = "Endereço IP ou host de origem", example = "192.168.0.1")
             String ipHost,
             @Schema(description = "Identificador interno do sistema", example = "1")
             Long idSystem) {
     }
 
-    /** Não há {@code UpdateRequest}: trilha de auditoria não se edita. */
     @Schema(description = "Requisição para registro de um log de acesso")
     record SaveRequest(
             @Schema(description = "Identificador interno do usuário", example = "1")
             Long idUser,
             @Schema(description = "Resultado da tentativa de acesso", example = "SUCCESS", requiredMode = RequiredMode.REQUIRED)
-            @NotNull AttemptResult attemptResult,
+            @NotBlank String attemptResult,
+            @Schema(description = "Endereço IP ou host de origem", example = "192.168.0.1")
+            String ipHost,
+            @Schema(description = "Identificador interno do sistema", example = "1")
+            Long idSystem) {
+    }
+
+    @Schema(description = "Requisição para atualização de um log de acesso")
+    record UpdateRequest(
+            @Schema(description = "Identificador interno do usuário", example = "1")
+            Long idUser,
+            @Schema(description = "Resultado da tentativa de acesso", example = "SUCCESS", requiredMode = RequiredMode.REQUIRED)
+            @NotBlank String attemptResult,
             @Schema(description = "Endereço IP ou host de origem", example = "192.168.0.1")
             String ipHost,
             @Schema(description = "Identificador interno do sistema", example = "1")

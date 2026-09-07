@@ -1,26 +1,18 @@
 package dev.sentry.api.domain.user.api;
 
-import dev.sentry.api.domain.user.Email;
 import dev.sentry.api.domain.user.User;
-import dev.sentry.api.domain.user.Username;
+import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 
-/**
- * Só a direção de leitura, e sem hash nem salt no {@code Response} — a escrita passa
- * pelas fábricas de {@link User}.
- */
 @Mapper(componentModel = "spring")
 public interface UserMapper {
 
-    @Mapping(target = "authenticationType", source = "credentials.authenticationType")
     UserRest.Response toDto(User user);
 
-    default String map(Email email) {
-        return email == null ? null : email.value();
-    }
+    User toEntity(UserRest.SaveRequest dto);
 
-    default String map(Username username) {
-        return username == null ? null : username.value();
-    }
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    void updateEntity(UserRest.UpdateRequest dto, @MappingTarget User entity);
 }

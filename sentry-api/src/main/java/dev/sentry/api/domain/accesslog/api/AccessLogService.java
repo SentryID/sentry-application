@@ -8,7 +8,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-/** Sem {@code update} nem {@code delete}: o log de acesso é append-only. */
 @Service
 public class AccessLogService {
 
@@ -30,13 +29,26 @@ public class AccessLogService {
     }
 
     public AccessLogRest.Response findById(Long id) {
-        return accessLogRepository.findById(id)
-                .map(accessLogMapper::toDto)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Log de acesso não encontrado"));
+        return accessLogMapper.toDto(getOrThrow(id));
     }
 
     public void save(AccessLogRest.SaveRequest accessLogRequest) {
-        accessLogRepository.save(AccessLog.record(accessLogRequest.idUser(), accessLogRequest.idSystem(),
-                accessLogRequest.attemptResult(), accessLogRequest.ipHost()));
+        accessLogRepository.save(accessLogMapper.toEntity(accessLogRequest));
+    }
+
+    public void update(Long id, AccessLogRest.UpdateRequest accessLogRequest) {
+        AccessLog accessLog = getOrThrow(id);
+        accessLogMapper.updateEntity(accessLogRequest, accessLog);
+        accessLogRepository.save(accessLog);
+    }
+
+    /** A tabela não tem exclusão lógica: o log é removido de fato. */
+    public void delete(Long id) {
+        accessLogRepository.delete(getOrThrow(id));
+    }
+
+    private AccessLog getOrThrow(Long id) {
+        return accessLogRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Log de acesso não encontrado"));
     }
 }

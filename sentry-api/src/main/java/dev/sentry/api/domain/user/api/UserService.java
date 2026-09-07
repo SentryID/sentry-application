@@ -1,8 +1,6 @@
 package dev.sentry.api.domain.user.api;
 
-import dev.sentry.api.domain.user.Email;
 import dev.sentry.api.domain.user.User;
-import dev.sentry.api.domain.user.Username;
 import dev.sentry.api.utils.SortUtils;
 import java.util.List;
 import org.springframework.data.domain.PageRequest;
@@ -34,33 +32,30 @@ public class UserService {
         return userMapper.toDto(getOrThrow(id));
     }
 
+    // ponytail: senha gravada como recebida; trocar por hash + salt quando o sentry-auth definir o algoritmo
     public void save(UserRest.SaveRequest userRequest) {
-        Username username = Username.of(userRequest.username());
-        Email email = Email.of(userRequest.email());
-        if (userRepository.findByUsername(username) != null) {
+        if (userRepository.findByUsername(userRequest.username()) != null) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Já existe um usuário com esse login");
         }
-        if (userRepository.findByEmail(email) != null) {
+        if (userRepository.findByEmail(userRequest.email()) != null) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Já existe um usuário com esse e-mail");
         }
-        userRepository.save(User.register(userRequest.name(), username, email, userRequest.authenticationType(),
-                userRequest.password(), userRequest.isActive()));
+        userRepository.save(userMapper.toEntity(userRequest));
     }
 
     public void update(Long id, UserRest.UpdateRequest userRequest) {
         User user = getOrThrow(id);
-        Email email = Email.of(userRequest.email());
-        User sameEmail = userRepository.findByEmail(email);
+        User sameEmail = userRepository.findByEmail(userRequest.email());
         if (sameEmail != null && !sameEmail.getId().equals(id)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Já existe um usuário com esse e-mail");
         }
-        user.update(userRequest.name(), email, userRequest.authenticationType(), userRequest.isActive());
+        userMapper.updateEntity(userRequest, user);
         userRepository.save(user);
     }
 
     public void delete(Long id) {
         User user = getOrThrow(id);
-        user.delete();
+        user.setIsDeleted(true);
         userRepository.save(user);
     }
 

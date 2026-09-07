@@ -1,26 +1,27 @@
 package dev.sentry.api.domain.passwordtoken;
 
-import dev.sentry.api.domain.shared.AuditableEntity;
-import dev.sentry.api.domain.shared.SecureToken;
-import dev.sentry.api.domain.shared.TokenValidity;
 import jakarta.persistence.Column;
-import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
-import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-/** Token de redefinição de senha. Uso único, com valor sempre gerado pelo servidor. */
 @Getter
+@Setter
 @Entity
 @Table(name = "password_tokens")
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class PasswordToken extends AuditableEntity {
+@EntityListeners(AuditingEntityListener.class)
+public class PasswordToken {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,22 +31,28 @@ public class PasswordToken extends AuditableEntity {
     @Column(nullable = false, unique = true)
     private String token;
 
+    @Column(name = "is_used", nullable = false)
+    private Boolean isUsed = false;
+
     @Column(name = "id_user", nullable = false)
     private Long idUser;
 
-    @Embedded
-    private TokenValidity validity;
+    @Column(name = "valid_until")
+    private LocalDateTime validUntil;
 
-    public static PasswordToken issue(Long idUser, LocalDateTime validUntil) {
-        PasswordToken passwordToken = new PasswordToken();
-        passwordToken.idUser = idUser;
-        passwordToken.token = SecureToken.generate();
-        passwordToken.validity = TokenValidity.validUntil(validUntil);
-        return passwordToken;
-    }
+    @CreatedBy
+    @Column(name = "created_by", updatable = false)
+    private String createdBy;
 
-    /** Uso único: recusa se já foi consumido ou se expirou. */
-    public void consume(LocalDateTime agora) {
-        this.validity = validity.consume(agora);
-    }
+    @CreatedDate
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @LastModifiedBy
+    @Column(name = "updated_by")
+    private String updatedBy;
+
+    @LastModifiedDate
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 }

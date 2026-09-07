@@ -13,11 +13,12 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
-@Tag(name = "Tokens de senha", description = "Emissão e consumo de tokens de redefinição de senha")
+@Tag(name = "Tokens de senha", description = "Operações de CRUD para tokens de redefinição de senha")
 @RequestMapping("/password-tokens")
 public interface PasswordTokenControllerSwagger {
 
@@ -35,26 +36,24 @@ public interface PasswordTokenControllerSwagger {
     @GetMapping("/{id}")
     PasswordTokenRest.Response findById(@PathVariable Long id);
 
-    @Operation(summary = "Emite um token de senha",
-            description = "O valor do token é gerado pelo servidor e devolvido no corpo da resposta")
+    @Operation(summary = "Cria um novo token de senha")
     @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Token emitido com sucesso"),
-            @ApiResponse(responseCode = "400", description = "Dados inválidos")
+            @ApiResponse(responseCode = "201", description = "Token criado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos"),
+            @ApiResponse(responseCode = "409", description = "Já existe um token de senha com esse valor")
     })
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    PasswordTokenRest.Response issue(@RequestBody @Valid PasswordTokenRest.SaveRequest request);
+    void save(@RequestBody @Valid PasswordTokenRest.SaveRequest request);
 
-    @Operation(summary = "Consome um token de senha", description = "Uso único: marca o token como utilizado")
+    @Operation(summary = "Atualiza um token de senha existente")
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Token consumido com sucesso"),
-            @ApiResponse(responseCode = "404", description = "Token de senha não encontrado"),
-            @ApiResponse(responseCode = "409", description = "Token já utilizado"),
-            @ApiResponse(responseCode = "410", description = "Token expirado")
+            @ApiResponse(responseCode = "204", description = "Token atualizado com sucesso"),
+            @ApiResponse(responseCode = "404", description = "Token de senha não encontrado")
     })
-    @PostMapping("/{id}/consume")
+    @PutMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    void consume(@PathVariable Long id);
+    void update(@PathVariable Long id, @RequestBody @Valid PasswordTokenRest.UpdateRequest request);
 
     @Operation(summary = "Remove um token de senha", description = "A tabela não tem exclusão lógica: o token é removido de fato")
     @ApiResponses({

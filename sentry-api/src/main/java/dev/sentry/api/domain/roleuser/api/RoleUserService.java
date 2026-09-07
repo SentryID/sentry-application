@@ -36,8 +36,7 @@ public class RoleUserService {
         if (roleUserRepository.findByIdGroupAndIdUser(roleUserRequest.idGroup(), roleUserRequest.idUser()) != null) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Esse usuário já está vinculado a esse grupo");
         }
-        roleUserRepository.save(
-                RoleUser.assign(roleUserRequest.idGroup(), roleUserRequest.idUser(), roleUserRequest.isActive()));
+        roleUserRepository.save(roleUserMapper.toEntity(roleUserRequest));
     }
 
     public void update(Long id, RoleUserRest.UpdateRequest roleUserRequest) {
@@ -47,13 +46,13 @@ public class RoleUserService {
         if (sameLink != null && !sameLink.getId().equals(id)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Esse usuário já está vinculado a esse grupo");
         }
-        roleUser.update(roleUserRequest.idGroup(), roleUserRequest.idUser(), roleUserRequest.isActive());
+        roleUserMapper.updateEntity(roleUserRequest, roleUser);
         roleUserRepository.save(roleUser);
     }
 
     public void delete(Long id) {
         RoleUser roleUser = getOrThrow(id);
-        roleUser.delete();
+        roleUser.setIsDeleted(true);
         roleUserRepository.save(roleUser);
     }
 

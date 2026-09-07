@@ -23,7 +23,7 @@ public class MfaTokenSpecification {
                         cb.like(cb.upper(root.get("username")), "%" + queryParams.username().toUpperCase() + "%"));
             }
             if (queryParams.isUsed() != null) {
-                predicate = cb.and(predicate, cb.equal(root.get("validity").get("isUsed"), queryParams.isUsed()));
+                predicate = cb.and(predicate, cb.equal(root.get("isUsed"), queryParams.isUsed()));
             }
             return predicate;
         };

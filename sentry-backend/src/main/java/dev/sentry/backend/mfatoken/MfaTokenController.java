@@ -25,13 +25,13 @@ public class MfaTokenController implements MfaTokenControllerSwagger {
     }
 
     @Override
-    public MfaTokenRest.Response issue(MfaTokenRest.SaveRequest request) {
-        return mfaTokenService.issue(request);
+    public void save(MfaTokenRest.SaveRequest request) {
+        mfaTokenService.save(request);
     }
 
     @Override
-    public void consume(Long id) {
-        mfaTokenService.consume(id);
+    public void update(Long id, MfaTokenRest.UpdateRequest request) {
+        mfaTokenService.update(id, request);
     }
 
     @Override

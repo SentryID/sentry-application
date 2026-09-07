@@ -2,6 +2,7 @@ package dev.sentry.api.domain.passwordtoken.api;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
@@ -28,7 +29,7 @@ public interface PasswordTokenRest {
     record Response(
             @Schema(description = "Identificador interno do token de senha", example = "1")
             Long id,
-            @Schema(description = "Token gerado pelo servidor", example = "b7a1c3d4e5f6")
+            @Schema(description = "Token de redefinição de senha", example = "b7a1c3d4e5f6")
             String token,
             @Schema(description = "Indica se o token já foi utilizado", example = "false")
             Boolean isUsed,
@@ -46,16 +47,21 @@ public interface PasswordTokenRest {
             LocalDateTime updatedAt) {
     }
 
-    /**
-     * Sem o campo {@code token}: o valor é gerado pelo servidor e devolvido na resposta.
-     * Aceitar o token do cliente deixaria qualquer um escolher o token de redefinição de
-     * senha de outra pessoa.
-     */
-    @Schema(description = "Requisição para emissão de um token de senha")
+    @Schema(description = "Requisição para criação de um token de senha")
     record SaveRequest(
+            @Schema(description = "Token de redefinição de senha", example = "b7a1c3d4e5f6", requiredMode = RequiredMode.REQUIRED)
+            @NotBlank String token,
             @Schema(description = "Identificador interno do usuário", example = "1", requiredMode = RequiredMode.REQUIRED)
             @NotNull Long idUser,
             @Schema(description = "Data e hora limite de validade do token", example = "2026-02-20T15:05:00", requiredMode = RequiredMode.REQUIRED)
             @NotNull LocalDateTime validUntil) {
+    }
+
+    @Schema(description = "Requisição para atualização de um token de senha")
+    record UpdateRequest(
+            @Schema(description = "Indica se o token já foi utilizado", example = "true", requiredMode = RequiredMode.REQUIRED)
+            @NotNull Boolean isUsed,
+            @Schema(description = "Data e hora limite de validade do token", example = "2026-02-20T15:05:00")
+            LocalDateTime validUntil) {
     }
 }

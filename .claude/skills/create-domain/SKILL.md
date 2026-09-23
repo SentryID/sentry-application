@@ -45,6 +45,12 @@ sentry-backend/src/main/java/dev/sentry/backend/foo/     (ou sentry-auth/.../dev
 Nunca criar `FooQueryRequest.java`, `FooResponse.java` etc. como arquivos soltos —
 os quatro records são aninhados em `FooRest`.
 
+**Contexto.** Quando a entidade faz parte de um conjunto que forma um contexto, o caminho
+vira `domain/<contexto>/foo/` — o formato interno do domínio (entidade + `api/`) não muda.
+Exemplo vivo: `domain/access/` agrupa `role`, `action`, `roleaction` e `roleuser`. O nome
+do contexto nunca é o nome de uma das entidades. Sem um conjunto de fato, a entidade fica
+direto em `domain/foo/`.
+
 ## Regras por arquivo
 
 **Entidade** (`Foo.java`, pacote `domain.foo`)

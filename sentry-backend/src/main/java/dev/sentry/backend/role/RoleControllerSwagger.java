@@ -1,6 +1,6 @@
 package dev.sentry.backend.role;
 
-import dev.sentry.api.domain.role.api.RoleRest;
+import dev.sentry.api.domain.access.role.api.RoleRest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;

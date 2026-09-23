@@ -1,7 +1,7 @@
 package dev.sentry.backend.action;
 
-import dev.sentry.api.domain.action.api.ActionRest;
-import dev.sentry.api.domain.action.api.ActionService;
+import dev.sentry.api.domain.access.action.api.ActionRest;
+import dev.sentry.api.domain.access.action.api.ActionService;
 import java.util.List;
 import org.springframework.web.bind.annotation.RestController;
 

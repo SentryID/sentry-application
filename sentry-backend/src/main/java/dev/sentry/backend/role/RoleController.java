@@ -1,7 +1,7 @@
 package dev.sentry.backend.role;
 
-import dev.sentry.api.domain.role.api.RoleRest;
-import dev.sentry.api.domain.role.api.RoleService;
+import dev.sentry.api.domain.access.role.api.RoleRest;
+import dev.sentry.api.domain.access.role.api.RoleService;
 import java.util.List;
 import org.springframework.web.bind.annotation.RestController;
 

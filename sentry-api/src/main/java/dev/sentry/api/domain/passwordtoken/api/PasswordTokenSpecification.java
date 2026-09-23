@@ -16,7 +16,7 @@ public class PasswordTokenSpecification {
                 predicate = cb.and(predicate, cb.equal(root.get("token"), queryParams.token()));
             }
             if (queryParams.idUser() != null) {
-                predicate = cb.and(predicate, cb.equal(root.get("idUser"), queryParams.idUser()));
+                predicate = cb.and(predicate, cb.equal(root.get("user").get("id"), queryParams.idUser()));
             }
             if (queryParams.isUsed() != null) {
                 predicate = cb.and(predicate, cb.equal(root.get("isUsed"), queryParams.isUsed()));

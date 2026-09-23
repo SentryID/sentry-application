@@ -1,6 +1,6 @@
 package dev.sentry.backend.action;
 
-import dev.sentry.api.domain.action.api.ActionRest;
+import dev.sentry.api.domain.access.action.api.ActionRest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;

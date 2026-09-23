@@ -14,10 +14,10 @@ public class AccessLogSpecification {
         return (root, query, cb) -> {
             Predicate predicate = cb.conjunction();
             if (queryParams.idUser() != null) {
-                predicate = cb.and(predicate, cb.equal(root.get("idUser"), queryParams.idUser()));
+                predicate = cb.and(predicate, cb.equal(root.get("user").get("id"), queryParams.idUser()));
             }
             if (queryParams.idSystem() != null) {
-                predicate = cb.and(predicate, cb.equal(root.get("idSystem"), queryParams.idSystem()));
+                predicate = cb.and(predicate, cb.equal(root.get("system").get("id"), queryParams.idSystem()));
             }
             if (queryParams.attemptResult() != null) {
                 predicate = cb.and(predicate, cb.equal(root.get("attemptResult"), queryParams.attemptResult()));

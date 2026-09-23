@@ -1,14 +1,18 @@
-package dev.sentry.api.domain.user;
+package dev.sentry.api.domain.access.roleuser;
 
+import dev.sentry.api.domain.access.role.Role;
+import dev.sentry.api.domain.user.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
-import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.CreatedBy;
@@ -20,35 +24,22 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Getter
 @Setter
 @Entity
-@Table(name = "users")
+@Table(name = "role_users")
 @EntityListeners(AuditingEntityListener.class)
-public class User {
+public class RoleUser {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_user")
+    @Column(name = "id_role_user")
     private Long id;
 
-    @Column(nullable = false, unique = true, updatable = false)
-    private UUID uuid = UUID.randomUUID();
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "id_role", nullable = false)
+    private Role role;
 
-    @Column(nullable = false)
-    private String name;
-
-    @Column(name = "authentication_type")
-    private String authenticationType;
-
-    @Column(nullable = false, unique = true)
-    private String username;
-
-    @Column(name = "password")
-    private String password;
-
-    @Column(name = "salt")
-    private String salt;
-
-    @Column(nullable = false, unique = true)
-    private String email;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "id_user", nullable = false)
+    private User user;
 
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;

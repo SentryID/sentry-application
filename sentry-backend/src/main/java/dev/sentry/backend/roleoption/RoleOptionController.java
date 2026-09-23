@@ -1,41 +1,41 @@
 package dev.sentry.backend.roleoption;
 
-import dev.sentry.api.domain.roleoption.api.RoleOptionRest;
-import dev.sentry.api.domain.roleoption.api.RoleOptionService;
+import dev.sentry.api.domain.access.roleaction.api.RoleActionRest;
+import dev.sentry.api.domain.access.roleaction.api.RoleActionService;
 import java.util.List;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class RoleOptionController implements RoleOptionControllerSwagger {
 
-    private final RoleOptionService roleOptionService;
+    private final RoleActionService roleActionService;
 
-    public RoleOptionController(RoleOptionService roleOptionService) {
-        this.roleOptionService = roleOptionService;
+    public RoleOptionController(RoleActionService roleActionService) {
+        this.roleActionService = roleActionService;
     }
 
     @Override
-    public List<RoleOptionRest.Response> findByQueryParams(RoleOptionRest.QueryRequest queryParams) {
-        return roleOptionService.findByQueryParams(queryParams);
+    public List<RoleActionRest.Response> findByQueryParams(RoleActionRest.QueryRequest queryParams) {
+        return roleActionService.findByQueryParams(queryParams);
     }
 
     @Override
-    public RoleOptionRest.Response findById(Long id) {
-        return roleOptionService.findById(id);
+    public RoleActionRest.Response findById(Long id) {
+        return roleActionService.findById(id);
     }
 
     @Override
-    public void save(RoleOptionRest.SaveRequest request) {
-        roleOptionService.save(request);
+    public void save(RoleActionRest.SaveRequest request) {
+        roleActionService.save(request);
     }
 
     @Override
-    public void update(Long id, RoleOptionRest.UpdateRequest request) {
-        roleOptionService.update(id, request);
+    public void update(Long id, RoleActionRest.UpdateRequest request) {
+        roleActionService.update(id, request);
     }
 
     @Override
     public void delete(Long id) {
-        roleOptionService.delete(id);
+        roleActionService.delete(id);
     }
 }

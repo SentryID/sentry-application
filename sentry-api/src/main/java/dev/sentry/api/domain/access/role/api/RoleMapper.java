@@ -1,6 +1,6 @@
-package dev.sentry.api.domain.accesslog.api;
+package dev.sentry.api.domain.access.role.api;
 
-import dev.sentry.api.domain.accesslog.AccessLog;
+import dev.sentry.api.domain.access.role.Role;
 import dev.sentry.api.utils.ReferenceMapper;
 import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
@@ -9,18 +9,18 @@ import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 
 @Mapper(componentModel = "spring", uses = ReferenceMapper.class)
-public interface AccessLogMapper {
+public interface RoleMapper {
 
-    @Mapping(target = "idUser", source = "user.id")
     @Mapping(target = "idSystem", source = "system.id")
-    AccessLogRest.Response toDto(AccessLog accessLog);
+    @Mapping(target = "idOrganization", source = "organization.id")
+    RoleRest.Response toDto(Role role);
 
-    @Mapping(target = "user", source = "idUser")
     @Mapping(target = "system", source = "idSystem")
-    AccessLog toEntity(AccessLogRest.SaveRequest dto);
+    @Mapping(target = "organization", source = "idOrganization")
+    Role toEntity(RoleRest.SaveRequest dto);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    @Mapping(target = "user", source = "idUser")
     @Mapping(target = "system", source = "idSystem")
-    void updateEntity(AccessLogRest.UpdateRequest dto, @MappingTarget AccessLog entity);
+    @Mapping(target = "organization", source = "idOrganization")
+    void updateEntity(RoleRest.UpdateRequest dto, @MappingTarget Role entity);
 }

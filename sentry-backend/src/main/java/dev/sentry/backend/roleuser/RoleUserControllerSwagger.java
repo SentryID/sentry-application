@@ -1,6 +1,6 @@
 package dev.sentry.backend.roleuser;
 
-import dev.sentry.api.domain.roleuser.api.RoleUserRest;
+import dev.sentry.api.domain.access.roleuser.api.RoleUserRest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -39,7 +39,7 @@ public interface RoleUserControllerSwagger {
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Vínculo criado com sucesso"),
             @ApiResponse(responseCode = "400", description = "Dados inválidos"),
-            @ApiResponse(responseCode = "409", description = "Esse usuário já está vinculado a esse grupo")
+            @ApiResponse(responseCode = "409", description = "Esse usuário já está vinculado a esse perfil")
     })
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -49,7 +49,7 @@ public interface RoleUserControllerSwagger {
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Vínculo atualizado com sucesso"),
             @ApiResponse(responseCode = "404", description = "Vínculo não encontrado"),
-            @ApiResponse(responseCode = "409", description = "Esse usuário já está vinculado a esse grupo")
+            @ApiResponse(responseCode = "409", description = "Esse usuário já está vinculado a esse perfil")
     })
     @PutMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)

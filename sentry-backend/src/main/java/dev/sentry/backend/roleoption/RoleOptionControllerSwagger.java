@@ -1,6 +1,6 @@
 package dev.sentry.backend.roleoption;
 
-import dev.sentry.api.domain.roleoption.api.RoleOptionRest;
+import dev.sentry.api.domain.access.roleaction.api.RoleActionRest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -25,7 +25,7 @@ public interface RoleOptionControllerSwagger {
     @Operation(summary = "Lista opções de perfil", description = "Retorna as opções que atendem aos filtros informados, com paginação")
     @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso")
     @GetMapping
-    List<RoleOptionRest.Response> findByQueryParams(@ParameterObject @Valid RoleOptionRest.QueryRequest queryParams);
+    List<RoleActionRest.Response> findByQueryParams(@ParameterObject @Valid RoleActionRest.QueryRequest queryParams);
 
     @Operation(summary = "Busca opção de perfil por ID", description = "Retorna os dados de uma opção específica")
     @ApiResponses({
@@ -33,7 +33,7 @@ public interface RoleOptionControllerSwagger {
             @ApiResponse(responseCode = "404", description = "Opção de perfil não encontrada")
     })
     @GetMapping("/{id}")
-    RoleOptionRest.Response findById(@PathVariable Long id);
+    RoleActionRest.Response findById(@PathVariable Long id);
 
     @Operation(summary = "Cria uma nova opção de perfil")
     @ApiResponses({
@@ -43,7 +43,7 @@ public interface RoleOptionControllerSwagger {
     })
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    void save(@RequestBody @Valid RoleOptionRest.SaveRequest request);
+    void save(@RequestBody @Valid RoleActionRest.SaveRequest request);
 
     @Operation(summary = "Atualiza uma opção de perfil existente")
     @ApiResponses({
@@ -53,7 +53,7 @@ public interface RoleOptionControllerSwagger {
     })
     @PutMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    void update(@PathVariable Long id, @RequestBody @Valid RoleOptionRest.UpdateRequest request);
+    void update(@PathVariable Long id, @RequestBody @Valid RoleActionRest.UpdateRequest request);
 
     @Operation(summary = "Remove uma opção de perfil", description = "Exclusão lógica: marca a opção como excluída")
     @ApiResponses({

@@ -1,7 +1,7 @@
 package dev.sentry.backend.roleuser;
 
-import dev.sentry.api.domain.roleuser.api.RoleUserRest;
-import dev.sentry.api.domain.roleuser.api.RoleUserService;
+import dev.sentry.api.domain.access.roleuser.api.RoleUserRest;
+import dev.sentry.api.domain.access.roleuser.api.RoleUserService;
 import java.util.List;
 import org.springframework.web.bind.annotation.RestController;
 

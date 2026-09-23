@@ -1,11 +1,15 @@
 package dev.sentry.api.domain.system;
 
+import dev.sentry.api.domain.organization.Organization;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -29,16 +33,20 @@ public class System {
     @Column(name = "id_system")
     private Long id;
 
-    @Column(name = "id_organization", nullable = false)
-    private Long idOrganization;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "id_organization", nullable = false)
+    private Organization organization;
 
     @Column(name = "external_code", unique = true)
     private String externalCode;
 
+    @Column(name = "description")
     private String description;
 
+    @Column(name = "url")
     private String url;
 
+    @Column(name = "scopes")
     private String scopes;
 
     @Column(nullable = false, unique = true, updatable = false)

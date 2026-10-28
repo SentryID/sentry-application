@@ -1,7 +1,7 @@
 package dev.sentry.api.domain.access.role;
 
 import dev.sentry.api.domain.organization.Organization;
-import dev.sentry.api.domain.system.System;
+import dev.sentry.api.domain.system.ExternalSystem;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
@@ -36,7 +36,7 @@ public class Role {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "id_system", nullable = false)
-    private System system;
+    private ExternalSystem system;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "id_organization", nullable = false)

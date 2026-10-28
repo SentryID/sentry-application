@@ -1,6 +1,6 @@
 package dev.sentry.api.domain.accesslog;
 
-import dev.sentry.api.domain.system.System;
+import dev.sentry.api.domain.system.ExternalSystem;
 import dev.sentry.api.domain.user.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -46,5 +46,5 @@ public class AccessLog {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_system")
-    private System system;
+    private ExternalSystem system;
 }

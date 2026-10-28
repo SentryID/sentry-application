@@ -1,6 +1,6 @@
 package dev.sentry.api.domain.system.api;
 
-import dev.sentry.api.domain.system.System;
+import dev.sentry.api.domain.system.ExternalSystem;
 import dev.sentry.api.utils.SortUtils;
 import java.util.List;
 import org.springframework.data.domain.PageRequest;
@@ -41,9 +41,9 @@ public class SystemService {
     }
 
     public void update(Long id, SystemRest.UpdateRequest systemRequest) {
-        System system = getOrThrow(id);
+        ExternalSystem system = getOrThrow(id);
         if (systemRequest.externalCode() != null) {
-            System sameCode = systemRepository.findByExternalCode(systemRequest.externalCode());
+            ExternalSystem sameCode = systemRepository.findByExternalCode(systemRequest.externalCode());
             if (sameCode != null && !sameCode.getId().equals(id)) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Já existe um sistema com esse código externo");
             }
@@ -53,12 +53,12 @@ public class SystemService {
     }
 
     public void delete(Long id) {
-        System system = getOrThrow(id);
+        ExternalSystem system = getOrThrow(id);
         system.setIsDeleted(true);
         systemRepository.save(system);
     }
 
-    private System getOrThrow(Long id) {
+    private ExternalSystem getOrThrow(Long id) {
         return systemRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sistema não encontrado"));
     }

@@ -1,6 +1,6 @@
 package dev.sentry.api.domain.system.api;
 
-import dev.sentry.api.domain.system.System;
+import dev.sentry.api.domain.system.ExternalSystem;
 import dev.sentry.api.utils.ReferenceMapper;
 import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
@@ -12,12 +12,12 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 public interface SystemMapper {
 
     @Mapping(target = "idOrganization", source = "organization.id")
-    SystemRest.Response toDto(System system);
+    SystemRest.Response toDto(ExternalSystem system);
 
     @Mapping(target = "organization", source = "idOrganization")
-    System toEntity(SystemRest.SaveRequest dto);
+    ExternalSystem toEntity(SystemRest.SaveRequest dto);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "organization", source = "idOrganization")
-    void updateEntity(SystemRest.UpdateRequest dto, @MappingTarget System entity);
+    void updateEntity(SystemRest.UpdateRequest dto, @MappingTarget ExternalSystem entity);
 }

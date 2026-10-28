@@ -3,7 +3,7 @@ package dev.sentry.api.utils;
 import dev.sentry.api.domain.access.action.Action;
 import dev.sentry.api.domain.access.role.Role;
 import dev.sentry.api.domain.organization.Organization;
-import dev.sentry.api.domain.system.System;
+import dev.sentry.api.domain.system.ExternalSystem;
 import dev.sentry.api.domain.user.User;
 import org.springframework.stereotype.Component;
 
@@ -11,11 +11,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class ReferenceMapper {
 
-    public System toSystem(Long id) {
+    public ExternalSystem toSystem(Long id) {
         if (id == null) {
             return null;
         }
-        System system = new System();
+        ExternalSystem system = new ExternalSystem();
         system.setId(id);
         return system;
     }

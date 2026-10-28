@@ -26,7 +26,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Entity
 @Table(name = "systems")
 @EntityListeners(AuditingEntityListener.class)
-public class System {
+public class ExternalSystem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

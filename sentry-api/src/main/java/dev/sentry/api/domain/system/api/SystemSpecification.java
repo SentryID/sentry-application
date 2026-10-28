@@ -1,6 +1,6 @@
 package dev.sentry.api.domain.system.api;
 
-import dev.sentry.api.domain.system.System;
+import dev.sentry.api.domain.system.ExternalSystem;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -9,7 +9,7 @@ public class SystemSpecification {
     private SystemSpecification() {
     }
 
-    public static Specification<System> findBy(SystemRest.QueryRequest queryParams) {
+    public static Specification<ExternalSystem> findBy(SystemRest.QueryRequest queryParams) {
         return (root, query, cb) -> {
             Predicate predicate = cb.conjunction();
             if (queryParams.idOrganization() != null) {

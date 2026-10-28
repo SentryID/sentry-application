@@ -1,6 +1,6 @@
 package dev.sentry.api.domain.access.action;
 
-import dev.sentry.api.domain.system.System;
+import dev.sentry.api.domain.system.ExternalSystem;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
@@ -35,7 +35,7 @@ public class Action {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "id_system", nullable = false)
-    private System system;
+    private ExternalSystem system;
 
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;

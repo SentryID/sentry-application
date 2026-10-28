@@ -47,12 +47,12 @@ public class ReferenceMapper {
         return role;
     }
 
-    public Action toAction(Long id) {
-        if (id == null) {
+    public Action toAction(String code) {
+        if (code == null) {
             return null;
         }
         Action action = new Action();
-        action.setId(id);
+        action.setCode(code);
         return action;
     }
 }

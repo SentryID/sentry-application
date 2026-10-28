@@ -32,14 +32,15 @@ public interface ActionControllerSwagger {
             @ApiResponse(responseCode = "200", description = "Ação encontrada"),
             @ApiResponse(responseCode = "404", description = "Ação não encontrada")
     })
-    @GetMapping("/{id}")
-    ActionRest.Response findById(@PathVariable Long id);
+    @GetMapping("/{code}")
+    ActionRest.Response findByCode(@PathVariable String code);
 
     @Operation(summary = "Cria uma nova ação")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Ação criada com sucesso"),
             @ApiResponse(responseCode = "400", description = "Dados inválidos"),
-            @ApiResponse(responseCode = "409", description = "Já existe uma ação desse tipo nesse sistema")
+            @ApiResponse(responseCode = "409",
+                    description = "Já existe uma ação com esse código ou uma ação desse tipo nesse sistema")
     })
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -51,16 +52,16 @@ public interface ActionControllerSwagger {
             @ApiResponse(responseCode = "404", description = "Ação não encontrada"),
             @ApiResponse(responseCode = "409", description = "Já existe uma ação desse tipo nesse sistema")
     })
-    @PutMapping("/{id}")
+    @PutMapping("/{code}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    void update(@PathVariable Long id, @RequestBody @Valid ActionRest.UpdateRequest request);
+    void update(@PathVariable String code, @RequestBody @Valid ActionRest.UpdateRequest request);
 
     @Operation(summary = "Remove uma ação", description = "Exclusão lógica: marca a ação como excluída")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Ação removida com sucesso"),
             @ApiResponse(responseCode = "404", description = "Ação não encontrada")
     })
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{code}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    void delete(@PathVariable Long id);
+    void delete(@PathVariable String code);
 }

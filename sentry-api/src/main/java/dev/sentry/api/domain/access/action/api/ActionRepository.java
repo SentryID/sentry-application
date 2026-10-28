@@ -6,7 +6,7 @@ import org.springframework.data.repository.ListCrudRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface ActionRepository extends ListCrudRepository<Action, Long>, JpaSpecificationExecutor<Action> {
+public interface ActionRepository extends ListCrudRepository<Action, String>, JpaSpecificationExecutor<Action> {
 
     Action findBySystemIdAndActionType(Long idSystem, String actionType);
 }

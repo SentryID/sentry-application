@@ -21,11 +21,11 @@ class RoleActionServiceTest {
     private final RoleActionService roleActionService = new RoleActionService(roleActionRepository, roleActionMapper);
 
     private static RoleActionRest.SaveRequest saveRequest() {
-        return new RoleActionRest.SaveRequest(1L, 2L, true);
+        return new RoleActionRest.SaveRequest(1L, "SENTRY.USER.VIEW", true);
     }
 
     private static RoleActionRest.UpdateRequest updateRequest() {
-        return new RoleActionRest.UpdateRequest(1L, 2L, true);
+        return new RoleActionRest.UpdateRequest(1L, "SENTRY.USER.VIEW", true);
     }
 
     private static RoleAction roleAction(Long id) {
@@ -36,7 +36,7 @@ class RoleActionServiceTest {
 
     @Test
     void saveRejectsActionAlreadyLinkedToRole() {
-        when(roleActionRepository.findByRoleIdAndActionId(1L, 2L)).thenReturn(roleAction(9L));
+        when(roleActionRepository.findByRoleIdAndActionCode(1L, "SENTRY.USER.VIEW")).thenReturn(roleAction(9L));
 
         ResponseStatusException exception =
                 assertThrows(ResponseStatusException.class, () -> roleActionService.save(saveRequest()));
@@ -48,7 +48,7 @@ class RoleActionServiceTest {
     @Test
     void savePersistsWhenThereIsNoConflict() {
         RoleAction mapped = roleAction(null);
-        when(roleActionRepository.findByRoleIdAndActionId(1L, 2L)).thenReturn(null);
+        when(roleActionRepository.findByRoleIdAndActionCode(1L, "SENTRY.USER.VIEW")).thenReturn(null);
         when(roleActionMapper.toEntity(any(RoleActionRest.SaveRequest.class))).thenReturn(mapped);
 
         roleActionService.save(saveRequest());
@@ -59,7 +59,7 @@ class RoleActionServiceTest {
     @Test
     void updateRejectsLinkAlreadyUsedByAnotherRecord() {
         when(roleActionRepository.findById(1L)).thenReturn(Optional.of(roleAction(1L)));
-        when(roleActionRepository.findByRoleIdAndActionId(1L, 2L)).thenReturn(roleAction(2L));
+        when(roleActionRepository.findByRoleIdAndActionCode(1L, "SENTRY.USER.VIEW")).thenReturn(roleAction(2L));
 
         ResponseStatusException exception =
                 assertThrows(ResponseStatusException.class, () -> roleActionService.update(1L, updateRequest()));
@@ -72,7 +72,7 @@ class RoleActionServiceTest {
     void updatePersistsWhenTheOnlyMatchIsTheLinkItself() {
         RoleAction existing = roleAction(1L);
         when(roleActionRepository.findById(1L)).thenReturn(Optional.of(existing));
-        when(roleActionRepository.findByRoleIdAndActionId(1L, 2L)).thenReturn(existing);
+        when(roleActionRepository.findByRoleIdAndActionCode(1L, "SENTRY.USER.VIEW")).thenReturn(existing);
 
         roleActionService.update(1L, updateRequest());
 

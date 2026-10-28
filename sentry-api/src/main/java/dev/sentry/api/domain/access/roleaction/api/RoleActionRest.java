@@ -2,6 +2,7 @@ package dev.sentry.api.domain.access.roleaction.api;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
@@ -12,8 +13,8 @@ public interface RoleActionRest {
     record QueryRequest(
             @Schema(description = "Identificador interno do perfil de acesso", example = "1")
             Long idRole,
-            @Schema(description = "Código da ação vinculada", example = "1")
-            Long cdAction,
+            @Schema(description = "Código da ação vinculada", example = "SENTRY.USER.VIEW")
+            String cdAction,
             @Schema(description = "Indica se a opção está ativa", example = "true")
             Boolean isActive,
             @Schema(description = "Indica se a opção foi excluída logicamente", example = "false")
@@ -32,8 +33,8 @@ public interface RoleActionRest {
             Long id,
             @Schema(description = "Identificador interno do perfil de acesso", example = "1")
             Long idRole,
-            @Schema(description = "Código da ação vinculada", example = "1")
-            Long cdAction,
+            @Schema(description = "Código da ação vinculada", example = "SENTRY.USER.VIEW")
+            String cdAction,
             @Schema(description = "Indica se a opção está ativa", example = "true")
             Boolean isActive,
             @Schema(description = "Indica se a opção foi excluída logicamente", example = "false")
@@ -52,8 +53,8 @@ public interface RoleActionRest {
     record SaveRequest(
             @Schema(description = "Identificador interno do perfil de acesso", example = "1", requiredMode = RequiredMode.REQUIRED)
             @NotNull Long idRole,
-            @Schema(description = "Código da ação vinculada", example = "1", requiredMode = RequiredMode.REQUIRED)
-            @NotNull Long cdAction,
+            @Schema(description = "Código da ação vinculada", example = "SENTRY.USER.VIEW", requiredMode = RequiredMode.REQUIRED)
+            @NotBlank String cdAction,
             @Schema(description = "Indica se a opção está ativa", example = "true", requiredMode = RequiredMode.REQUIRED)
             @NotNull Boolean isActive) {
     }
@@ -62,8 +63,8 @@ public interface RoleActionRest {
     record UpdateRequest(
             @Schema(description = "Identificador interno do perfil de acesso", example = "1", requiredMode = RequiredMode.REQUIRED)
             @NotNull Long idRole,
-            @Schema(description = "Código da ação vinculada", example = "1", requiredMode = RequiredMode.REQUIRED)
-            @NotNull Long cdAction,
+            @Schema(description = "Código da ação vinculada", example = "SENTRY.USER.VIEW", requiredMode = RequiredMode.REQUIRED)
+            @NotBlank String cdAction,
             @Schema(description = "Indica se a opção está ativa", example = "true", requiredMode = RequiredMode.REQUIRED)
             @NotNull Boolean isActive) {
     }

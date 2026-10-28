@@ -23,14 +23,14 @@ public interface ActionRest {
             @NotNull Integer page,
             @Schema(description = "Tamanho da página para paginação", example = "10", requiredMode = RequiredMode.REQUIRED)
             @NotNull Integer pageSize,
-            @Schema(description = "Campo para ordenação dos resultados.", example = "id,asc;actionType,desc")
+            @Schema(description = "Campo para ordenação dos resultados.", example = "code,asc;actionType,desc")
             String sortBy) {
     }
 
     @Schema(description = "Dados de uma ação")
     record Response(
-            @Schema(description = "Código da ação", example = "1")
-            Long id,
+            @Schema(description = "Código da ação", example = "SENTRY.USER.VIEW")
+            String code,
             @Schema(description = "Tipo da ação", example = "READ")
             String actionType,
             @Schema(description = "Identificador interno do sistema", example = "1")
@@ -51,6 +51,9 @@ public interface ActionRest {
 
     @Schema(description = "Requisição para criação de uma ação")
     record SaveRequest(
+            @Schema(description = "Código da ação, único e imutável", example = "SENTRY.USER.VIEW",
+                    requiredMode = RequiredMode.REQUIRED)
+            @NotBlank String code,
             @Schema(description = "Tipo da ação", example = "READ", requiredMode = RequiredMode.REQUIRED)
             @NotBlank String actionType,
             @Schema(description = "Identificador interno do sistema", example = "1", requiredMode = RequiredMode.REQUIRED)

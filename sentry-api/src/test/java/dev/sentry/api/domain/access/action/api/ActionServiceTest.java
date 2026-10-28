@@ -20,23 +20,37 @@ class ActionServiceTest {
     private final ActionMapper actionMapper = mock(ActionMapper.class);
     private final ActionService actionService = new ActionService(actionRepository, actionMapper);
 
+    private static final String CODE = "SENTRY.USER.VIEW";
+
     private static ActionRest.SaveRequest saveRequest() {
-        return new ActionRest.SaveRequest("LOGIN", 1L, true);
+        return new ActionRest.SaveRequest(CODE, "LOGIN", 1L, true);
     }
 
     private static ActionRest.UpdateRequest updateRequest() {
         return new ActionRest.UpdateRequest("LOGIN", 1L, true);
     }
 
-    private static Action action(Long id) {
+    private static Action action(String code) {
         Action action = new Action();
-        action.setId(id);
+        action.setCode(code);
         return action;
     }
 
     @Test
+    void saveRejectsDuplicatedCode() {
+        when(actionRepository.existsById(CODE)).thenReturn(true);
+
+        ResponseStatusException exception =
+                assertThrows(ResponseStatusException.class, () -> actionService.save(saveRequest()));
+
+        assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
+        assertEquals("Já existe uma ação com esse código", exception.getReason());
+        verify(actionRepository, never()).save(any());
+    }
+
+    @Test
     void saveRejectsSameActionTypeInSameSystem() {
-        when(actionRepository.findBySystemIdAndActionType(1L, "LOGIN")).thenReturn(action(9L));
+        when(actionRepository.findBySystemIdAndActionType(1L, "LOGIN")).thenReturn(action("OTHER.CODE"));
 
         ResponseStatusException exception =
                 assertThrows(ResponseStatusException.class, () -> actionService.save(saveRequest()));
@@ -47,7 +61,7 @@ class ActionServiceTest {
 
     @Test
     void savePersistsWhenThereIsNoConflict() {
-        Action mapped = action(null);
+        Action mapped = action(CODE);
         when(actionRepository.findBySystemIdAndActionType(1L, "LOGIN")).thenReturn(null);
         when(actionMapper.toEntity(any(ActionRest.SaveRequest.class))).thenReturn(mapped);
 
@@ -58,11 +72,11 @@ class ActionServiceTest {
 
     @Test
     void updateRejectsSameActionTypeOfAnotherAction() {
-        when(actionRepository.findById(1L)).thenReturn(Optional.of(action(1L)));
-        when(actionRepository.findBySystemIdAndActionType(1L, "LOGIN")).thenReturn(action(2L));
+        when(actionRepository.findById(CODE)).thenReturn(Optional.of(action(CODE)));
+        when(actionRepository.findBySystemIdAndActionType(1L, "LOGIN")).thenReturn(action("OTHER.CODE"));
 
         ResponseStatusException exception =
-                assertThrows(ResponseStatusException.class, () -> actionService.update(1L, updateRequest()));
+                assertThrows(ResponseStatusException.class, () -> actionService.update(CODE, updateRequest()));
 
         assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
         verify(actionRepository, never()).save(any());
@@ -70,11 +84,11 @@ class ActionServiceTest {
 
     @Test
     void updatePersistsWhenTheOnlyMatchIsTheActionItself() {
-        Action existing = action(1L);
-        when(actionRepository.findById(1L)).thenReturn(Optional.of(existing));
+        Action existing = action(CODE);
+        when(actionRepository.findById(CODE)).thenReturn(Optional.of(existing));
         when(actionRepository.findBySystemIdAndActionType(1L, "LOGIN")).thenReturn(existing);
 
-        actionService.update(1L, updateRequest());
+        actionService.update(CODE, updateRequest());
 
         verify(actionMapper).updateEntity(any(ActionRest.UpdateRequest.class), any(Action.class));
         verify(actionRepository).save(existing);
@@ -82,10 +96,10 @@ class ActionServiceTest {
 
     @Test
     void updateFailsWhenActionDoesNotExist() {
-        when(actionRepository.findById(1L)).thenReturn(Optional.empty());
+        when(actionRepository.findById(CODE)).thenReturn(Optional.empty());
 
         ResponseStatusException exception =
-                assertThrows(ResponseStatusException.class, () -> actionService.update(1L, updateRequest()));
+                assertThrows(ResponseStatusException.class, () -> actionService.update(CODE, updateRequest()));
 
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
     }

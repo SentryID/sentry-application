@@ -20,8 +20,8 @@ public class ActionController implements ActionControllerSwagger {
     }
 
     @Override
-    public ActionRest.Response findById(Long id) {
-        return actionService.findById(id);
+    public ActionRest.Response findByCode(String code) {
+        return actionService.findByCode(code);
     }
 
     @Override
@@ -30,12 +30,12 @@ public class ActionController implements ActionControllerSwagger {
     }
 
     @Override
-    public void update(Long id, ActionRest.UpdateRequest request) {
-        actionService.update(id, request);
+    public void update(String code, ActionRest.UpdateRequest request) {
+        actionService.update(code, request);
     }
 
     @Override
-    public void delete(Long id) {
-        actionService.delete(id);
+    public void delete(String code) {
+        actionService.delete(code);
     }
 }

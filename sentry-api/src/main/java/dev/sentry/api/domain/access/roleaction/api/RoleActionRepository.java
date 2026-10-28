@@ -9,5 +9,5 @@ import org.springframework.stereotype.Repository;
 public interface RoleActionRepository
         extends ListCrudRepository<RoleAction, Long>, JpaSpecificationExecutor<RoleAction> {
 
-    RoleAction findByRoleIdAndActionId(Long idRole, Long cdAction);
+    RoleAction findByRoleIdAndActionCode(Long idRole, String cdAction);
 }

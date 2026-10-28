@@ -12,7 +12,7 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 public interface RoleActionMapper {
 
     @Mapping(target = "idRole", source = "role.id")
-    @Mapping(target = "cdAction", source = "action.id")
+    @Mapping(target = "cdAction", source = "action.code")
     RoleActionRest.Response toDto(RoleAction roleAction);
 
     @Mapping(target = "role", source = "idRole")

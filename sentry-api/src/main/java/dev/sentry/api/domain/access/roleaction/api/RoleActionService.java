@@ -39,7 +39,7 @@ public class RoleActionService {
      * @throws ResponseStatusException com status 409 quando a ação já estiver vinculada ao perfil
      */
     public void save(RoleActionRest.SaveRequest roleActionRequest) {
-        if (roleActionRepository.findByRoleIdAndActionId(roleActionRequest.idRole(), roleActionRequest.cdAction())
+        if (roleActionRepository.findByRoleIdAndActionCode(roleActionRequest.idRole(), roleActionRequest.cdAction())
                 != null) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Essa ação já está vinculada ao perfil");
         }
@@ -56,7 +56,7 @@ public class RoleActionService {
     public void update(Long id, RoleActionRest.UpdateRequest roleActionRequest) {
         RoleAction roleAction = getOrThrow(id);
         RoleAction sameAction =
-                roleActionRepository.findByRoleIdAndActionId(roleActionRequest.idRole(), roleActionRequest.cdAction());
+                roleActionRepository.findByRoleIdAndActionCode(roleActionRequest.idRole(), roleActionRequest.cdAction());
         if (sameAction != null && !sameAction.getId().equals(id)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Essa ação já está vinculada ao perfil");
         }

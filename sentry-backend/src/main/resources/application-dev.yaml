@@ -1,0 +1,4 @@
+# Perfil de desenvolvimento: aplica também os dados fictícios de db/dev. Nunca ativo por padrão.
+spring:
+  flyway:
+    locations: classpath:db/migration,classpath:db/dev

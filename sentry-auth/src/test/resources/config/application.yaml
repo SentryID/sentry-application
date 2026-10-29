@@ -1,0 +1,4 @@
+# só nos testes: chave de assinatura temporária (RN-F1-07.4)
+sentry:
+  jwt:
+    generate-if-missing: true

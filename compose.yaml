@@ -32,6 +32,10 @@ services:
       SENTRY_ADMIN_EMAIL: ${SENTRY_ADMIN_EMAIL:-admin@sentry.local}
       SENTRY_ADMIN_PASSWORD: ${SENTRY_ADMIN_PASSWORD:-}
       SENTRY_ISSUER_URL: ${SENTRY_ISSUER_URL:-http://localhost:8081}
+      SENTRY_JWT_SIGNING_KEY: ${SENTRY_JWT_SIGNING_KEY:-}
+      SENTRY_JWT_PREVIOUS_KEY: ${SENTRY_JWT_PREVIOUS_KEY:-}
+      # ambiente local: sem chave configurada, gera uma temporária a cada subida (RN-F1-07.4)
+      SENTRY_JWT_GENERATE_IF_MISSING: ${SENTRY_JWT_GENERATE_IF_MISSING:-true}
     ports:
       - "8081:8081"
     healthcheck:

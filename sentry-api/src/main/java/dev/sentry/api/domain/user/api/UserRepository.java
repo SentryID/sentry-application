@@ -1,6 +1,7 @@
 package dev.sentry.api.domain.user.api;
 
 import dev.sentry.api.domain.user.User;
+import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.repository.ListCrudRepository;
 import org.springframework.stereotype.Repository;
@@ -11,4 +12,6 @@ public interface UserRepository extends ListCrudRepository<User, Long>, JpaSpeci
     User findByUsernameIgnoreCase(String username);
 
     User findByEmail(String email);
+
+    User findByUuid(UUID uuid);
 }

@@ -36,6 +36,8 @@ services:
       SENTRY_JWT_PREVIOUS_KEY: ${SENTRY_JWT_PREVIOUS_KEY:-}
       # ambiente local: sem chave configurada, gera uma temporária a cada subida (RN-F1-07.4)
       SENTRY_JWT_GENERATE_IF_MISSING: ${SENTRY_JWT_GENERATE_IF_MISSING:-true}
+      # SPRING_PROFILES_ACTIVE=dev aplica os dados de exemplo (db/dev), usados por examples/spa
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-}
     ports:
       - "8081:8081"
     healthcheck:

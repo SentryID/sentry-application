@@ -6,10 +6,16 @@ INSERT INTO organizations (name, external_code, uuid, is_active, is_deleted, cre
 VALUES ('Acme Exemplo', 'ACME', gen_random_uuid(), TRUE, FALSE, 'seed', now(), 'seed', now())
 ON CONFLICT (external_code) DO NOTHING;
 
-INSERT INTO systems (id_organization, external_code, description, url, scopes, uuid, is_active, is_deleted, created_by, created_at, updated_by, updated_at)
-SELECT id_organization, 'SYS001', 'Sistema de Exemplo', 'http://localhost:3000', 'openid profile email', gen_random_uuid(), TRUE, FALSE, 'seed', now(), 'seed', now()
+-- SYS001 é o cliente público da aplicação de exemplo em examples/spa (http://127.0.0.1:3000)
+INSERT INTO systems (id_organization, external_code, description, url, scopes, client_type, uuid, is_active, is_deleted, created_by, created_at, updated_by, updated_at)
+SELECT id_organization, 'SYS001', 'Sistema de Exemplo', 'http://127.0.0.1:3000', 'openid profile email', 'PUBLIC', gen_random_uuid(), TRUE, FALSE, 'seed', now(), 'seed', now()
 FROM organizations WHERE external_code = 'ACME'
 ON CONFLICT (external_code) DO NOTHING;
+
+INSERT INTO system_redirect_uris (id_system, uri, uri_type)
+SELECT id_system, 'http://127.0.0.1:3000/', uri_type FROM systems, (VALUES ('LOGIN'), ('LOGOUT')) AS t (uri_type)
+WHERE external_code = 'SYS001'
+ON CONFLICT DO NOTHING;
 
 INSERT INTO actions (cd_action, action_type, id_system, is_active, is_deleted, created_by, created_at, updated_by, updated_at)
 SELECT 'SYS001.REPORT.VIEW', 'SEARCH', id_system, TRUE, FALSE, 'seed', now(), 'seed', now()

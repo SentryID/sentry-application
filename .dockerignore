@@ -1,0 +1,8 @@
+**/target
+.git
+.idea
+**/.idea
+.claude
+.docs
+.env
+*.patch

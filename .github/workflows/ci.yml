@@ -33,7 +33,7 @@ jobs:
               END {printf "| %s | %.1f%% |\n", m, (miss+cov) ? 100*cov/(miss+cov) : 0}' "$csv" >> "$GITHUB_STEP_SUMMARY"
           done
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: relatorios

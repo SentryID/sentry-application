@@ -45,7 +45,7 @@ class UserServiceTest {
 
     @Test
     void saveRejectsDuplicatedUsername() {
-        when(userRepository.findByUsername("maria.silva")).thenReturn(new User());
+        when(userRepository.findByUsernameIgnoreCase("maria.silva")).thenReturn(new User());
 
         ResponseStatusException exception =
                 assertThrows(ResponseStatusException.class, () -> userService.save(saveRequest()));

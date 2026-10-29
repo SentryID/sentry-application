@@ -41,7 +41,7 @@ class BootstrapServiceTest {
 
     @Test
     void failsWhenAdminUsernameIsTaken() {
-        when(userRepository.findByUsername("admin")).thenReturn(new User());
+        when(userRepository.findByUsernameIgnoreCase("admin")).thenReturn(new User());
 
         assertThrows(IllegalStateException.class, () -> bootstrapService.run(null));
         verify(organizationRepository, never()).save(any());

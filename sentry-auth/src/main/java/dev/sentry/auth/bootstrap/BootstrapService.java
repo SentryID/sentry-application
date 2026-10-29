@@ -73,7 +73,7 @@ public class BootstrapService implements ApplicationRunner {
         if (organizationRepository.findByExternalCode(PLATFORM_ORGANIZATION) != null) {
             return;
         }
-        if (userRepository.findByUsername(properties.username()) != null
+        if (userRepository.findByUsernameIgnoreCase(properties.username()) != null
                 || userRepository.findByEmail(properties.email()) != null) {
             throw new IllegalStateException(
                     "Já existe um usuário com o login ou o e-mail do administrador; ajuste SENTRY_ADMIN_USERNAME e SENTRY_ADMIN_EMAIL");

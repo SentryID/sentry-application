@@ -39,10 +39,11 @@ public class UserService {
      * Cria um usuário, gravando a senha com hash Argon2id (RN-F0-02.7).
      *
      * @param userRequest dados do novo usuário, com a senha em claro
-     * @throws ResponseStatusException 409 se o login ou o e-mail já estiverem em uso
+     * @throws ResponseStatusException 409 se o login (sem diferenciar maiúsculas, RN-F1-02.1) ou o e-mail já estiverem
+     *     em uso
      */
     public void save(UserRest.SaveRequest userRequest) {
-        if (userRepository.findByUsername(userRequest.username()) != null) {
+        if (userRepository.findByUsernameIgnoreCase(userRequest.username()) != null) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Já existe um usuário com esse login");
         }
         if (userRepository.findByEmail(userRequest.email()) != null) {

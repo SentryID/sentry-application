@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface UserRepository extends ListCrudRepository<User, Long>, JpaSpecificationExecutor<User> {
 
-    User findByUsername(String username);
+    User findByUsernameIgnoreCase(String username);
 
     User findByEmail(String email);
 }

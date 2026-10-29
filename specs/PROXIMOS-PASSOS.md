@@ -16,6 +16,7 @@ Situação em 29/10/2026. O `init` já foi integrado ao `main`; a 0.6, a 0.7, a 
 | 0.8 | Job `image` no `ci.yml`: em push no `main`, depois de `build` e `gitleaks` verdes, publica `ghcr.io/<owner em minúsculas>/sentry-auth:<sha>` com o `GITHUB_TOKEN` (`packages: write`). A proteção do `main` fica com o usuário | branch `fase-1/clientes-oauth` |
 | 1.1 | Migração `V2__oauth_clients_and_sessions.sql`: `systems` ganha `client_type`, `client_secret_hash`, `is_trusted` e `external_code NOT NULL` (é o `client_id`); `system_redirect_uris` (`LOGIN`/`LOGOUT`); `access_logs` ganha `attempted_username`, `channel` e `user_agent`; `oauth2_authorization`, `oauth2_authorization_consent` (Spring Authorization Server 7.1) e `spring_session*` (Spring Session JDBC 4.1), adaptados ao PostgreSQL. Entidades `ExternalSystem` e `AccessLog` ajustadas para o `ddl-auto: validate` | branch `fase-1/clientes-oauth` |
 | 1.2 | `/systems` no `sentry-backend` com os dados de cliente: `clientType`, `redirectUris`, `postLogoutRedirectUris`, `isTrusted`; criação de `CONFIDENTIAL` devolve o `client_secret` uma vez (hash Argon2id no banco); `POST /systems/{id}/client-secret` rotaciona; URIs só `https` (ou `http` em `localhost`/`127.0.0.1`), sem fragmento; escopos só `openid`, `profile`, `email`, `offline_access`; `externalCode` obrigatório e imutável. Testes CA-F1-01.1, .2 e .4 | branch `fase-1/clientes-oauth` |
+| 1.3 | `DatabaseAuthenticationProvider` (um `AuthenticationProvider` do Spring Security): username sem diferenciar maiúsculas (índice único `lower(username)` na V3), usuário ativo, `DATABASE`, senha conferindo, sistema ativo e papel ativo no sistema; mensagem única "Usuário ou senha inválidos"; hash simulado para usuário inexistente; principal = `uuid` do usuário; re-hash da 0.6 gravado no login. Testes CA-F1-02.1 a .5 | branch `fase-1/clientes-oauth` |
 
 Achados que a spec não previa, já tratados:
 
@@ -50,7 +51,13 @@ Questões em aberto da Fase 1, recomendações aceitas em 29/10:
 
 - Trocar a senha exposta no commit `77462ee` em todo lugar onde é usada (RN-F0-03.2).
 
-## Próximo passo: 1.3 — Validação de credenciais (F1-02)
+## Próximo passo: 1.4 — Registro de tentativas (F1-10)
+
+Notas da 1.3:
+
+- O sistema que pede o login vem nos `details` da autenticação (`LoginAttempt`: client_id, canal, IP, User-Agent).
+- Usuário de outro `authentication_type` (ex.: LDAP) cai como `INVALID_CREDENTIALS`. Quando o LDAP entrar, o provedor de banco devolve `null` para esses usuários e o `ProviderManager` tenta o próximo (RN-F1-02.7); a classe vazia `LDAPAuthenticationProvider` foi removida.
+- Usuário excluído é registrado como `USER_INACTIVE` (a RN-F1-10.2 não tem um valor próprio para excluído).
 
 Notas da 1.2:
 

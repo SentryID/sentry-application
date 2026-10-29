@@ -88,7 +88,7 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-compiler-plugin</artifactId>
-					<version>3.11.0</version>
+					<version>3.16.0</version>
 					<configuration>
 						<!-- sem o spring-boot-starter-parent, o -parameters não vem ligado; o Spring MVC precisa dele para resolver @PathVariable sem nome explícito -->
 						<parameters>true</parameters>

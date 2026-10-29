@@ -1,4 +1,4 @@
-package dev.sentry.auth.direct;
+package dev.sentry.auth.login;
 
 import dev.sentry.api.domain.accesslog.AccessLog.Channel;
 import dev.sentry.api.domain.system.ExternalSystem;
@@ -7,13 +7,18 @@ import dev.sentry.api.security.password.PasswordService;
 import dev.sentry.auth.oauth.TokenClaimsCustomizer;
 import dev.sentry.auth.provider.DatabaseAuthenticationProvider;
 import dev.sentry.auth.provider.LoginAttempt;
+import jakarta.servlet.http.HttpServletRequest;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderManager;
@@ -44,13 +49,14 @@ import org.springframework.stereotype.Service;
  * tokens do fluxo PKCE, sem sessão SSO.
  */
 @Service
-public class DirectLoginService {
+public class LoginService {
 
     /** Tipo de concessão gravado na autorização; não é anunciado na descoberta nem aceito no {@code /oauth2/token}. */
     public static final AuthorizationGrantType DIRECT_LOGIN =
             new AuthorizationGrantType("urn:sentry:params:oauth:grant-type:direct-login");
     static final String DEFAULT_SCOPE = "openid profile";
 
+    private static final Set<String> LOCAL_HOSTS = Set.of("localhost", "127.0.0.1", "[::1]");
     private static final OAuth2TokenType ID_TOKEN = new OAuth2TokenType(OidcParameterNames.ID_TOKEN);
     private static final Set<ClientAuthenticationMethod> SECRET_METHODS =
             Set.of(ClientAuthenticationMethod.CLIENT_SECRET_BASIC, ClientAuthenticationMethod.CLIENT_SECRET_POST);
@@ -63,7 +69,7 @@ public class DirectLoginService {
     private final OAuth2AuthorizationService authorizationService;
     private final AuthorizationServerSettings authorizationServerSettings;
 
-    public DirectLoginService(RegisteredClientRepository registeredClientRepository, SystemRepository systemRepository,
+    public LoginService(RegisteredClientRepository registeredClientRepository, SystemRepository systemRepository,
             PasswordService passwordService, List<AuthenticationProvider> authenticationProviders,
             OAuth2TokenGenerator<OAuth2Token> tokenGenerator, OAuth2AuthorizationService authorizationService,
             AuthorizationServerSettings authorizationServerSettings) {
@@ -78,29 +84,37 @@ public class DirectLoginService {
     }
 
     /**
-     * Autentica o sistema e o usuário e emite os tokens.
+     * Atende o {@code POST /api/v1/auth/login}: confere o HTTPS, lê o sistema chamador do HTTP Basic, autentica o
+     * sistema e o usuário e emite os tokens.
      *
-     * @param clientId {@code client_id} do sistema chamador, do HTTP Basic
-     * @param clientSecret segredo do sistema chamador, do HTTP Basic
      * @param request credenciais do usuário e escopos pedidos
-     * @param ipAddress IP do cliente, para o registro da tentativa
-     * @param userAgent {@code User-Agent} da requisição, para o registro da tentativa
+     * @param httpRequest requisição HTTP, de onde vêm o {@code Authorization}, o IP e o {@code User-Agent}
      * @return os tokens no formato de resposta do OAuth
-     * @throws DirectLoginException {@code 401 invalid_client} se o sistema não autenticar ou for público;
-     *     {@code 403 unauthorized_client} se não for confiável; {@code 400 invalid_scope} se pedir escopo não permitido;
-     *     {@code 401 invalid_grant} com a mensagem genérica se as credenciais do usuário falharem
+     * @throws LoginException {@code 400 invalid_request} sem HTTPS fora de localhost (RN-F1-11.10); {@code 401
+     *     invalid_client} se o sistema não autenticar ou for público; {@code 403 unauthorized_client} se não for
+     *     confiável; {@code 400 invalid_scope} se pedir escopo não permitido; {@code 401 invalid_grant} com a mensagem
+     *     genérica se as credenciais do usuário falharem
      */
-    public DirectLoginRest.TokenResponse login(String clientId, String clientSecret, DirectLoginRest.LoginRequest request,
+    public LoginRest.TokenResponse login(LoginRest.LoginRequest request, HttpServletRequest httpRequest) {
+        if (!httpRequest.isSecure() && !LOCAL_HOSTS.contains(httpRequest.getServerName())) {
+            throw new LoginException(HttpStatus.BAD_REQUEST, "invalid_request", "Use HTTPS");
+        }
+        String[] client = basicCredentials(httpRequest.getHeader(HttpHeaders.AUTHORIZATION));
+        return authenticateAndIssue(client[0], client[1], request, httpRequest.getRemoteAddr(),
+                httpRequest.getHeader(HttpHeaders.USER_AGENT));
+    }
+
+    private LoginRest.TokenResponse authenticateAndIssue(String clientId, String clientSecret, LoginRest.LoginRequest request,
             String ipAddress, String userAgent) {
         RegisteredClient client = authenticateClient(clientId, clientSecret);
         ExternalSystem system = systemRepository.findByExternalCode(clientId);
         if (!system.getIsTrusted()) {
-            throw new DirectLoginException(HttpStatus.FORBIDDEN, "unauthorized_client",
+            throw new LoginException(HttpStatus.FORBIDDEN, "unauthorized_client",
                     "Este sistema não está autorizado a usar o login direto");
         }
         Set<String> scopes = requestedScopes(request.scope());
         if (!client.getScopes().containsAll(scopes)) {
-            throw new DirectLoginException(HttpStatus.BAD_REQUEST, "invalid_scope", "Escopo não permitido para este sistema");
+            throw new LoginException(HttpStatus.BAD_REQUEST, "invalid_scope", "Escopo não permitido para este sistema");
         }
 
         Authentication principal = authenticateUser(request, clientId, ipAddress, userAgent);
@@ -114,24 +128,24 @@ public class DirectLoginService {
                 && client.getClientAuthenticationMethods().stream().anyMatch(SECRET_METHODS::contains)
                 && passwordService.verify(clientSecret, client.getClientSecret()).matches();
         if (!authenticated) {
-            throw new DirectLoginException(HttpStatus.UNAUTHORIZED, "invalid_client", "Falha na autenticação do sistema");
+            throw new LoginException(HttpStatus.UNAUTHORIZED, "invalid_client", "Falha na autenticação do sistema");
         }
         return client;
     }
 
-    private Authentication authenticateUser(DirectLoginRest.LoginRequest request, String clientId, String ipAddress,
+    private Authentication authenticateUser(LoginRest.LoginRequest request, String clientId, String ipAddress,
             String userAgent) {
         var attempt = UsernamePasswordAuthenticationToken.unauthenticated(request.username(), request.password());
         attempt.setDetails(new LoginAttempt(clientId, Channel.DIRECT, ipAddress, userAgent));
         try {
             return authenticationManager.authenticate(attempt);
         } catch (AuthenticationException e) {
-            throw new DirectLoginException(HttpStatus.UNAUTHORIZED, "invalid_grant",
+            throw new LoginException(HttpStatus.UNAUTHORIZED, "invalid_grant",
                     DatabaseAuthenticationProvider.INVALID_CREDENTIALS_MESSAGE);
         }
     }
 
-    private DirectLoginRest.TokenResponse issueTokens(RegisteredClient client, Authentication principal, Set<String> scopes) {
+    private LoginRest.TokenResponse issueTokens(RegisteredClient client, Authentication principal, Set<String> scopes) {
         OAuth2Authorization.Builder authorization = OAuth2Authorization.withRegisteredClient(client)
                 .principalName(principal.getName())
                 .authorizationGrantType(DIRECT_LOGIN)
@@ -171,7 +185,7 @@ public class DirectLoginService {
         }
         authorizationService.save(authorization.build());
 
-        return new DirectLoginRest.TokenResponse(accessToken.getTokenValue(), "Bearer",
+        return new LoginRest.TokenResponse(accessToken.getTokenValue(), "Bearer",
                 Duration.between(accessToken.getIssuedAt(), accessToken.getExpiresAt()).toSeconds(),
                 idToken == null ? null : idToken.getTokenValue(),
                 refreshToken == null ? null : refreshToken.getTokenValue(),
@@ -191,6 +205,22 @@ public class DirectLoginService {
                 return authorizationServerSettings;
             }
         };
+    }
+
+    // HTTP Basic com client_id e client_secret codificados como no RFC 6749, 2.3.1; malformado vale como ausente
+    static String[] basicCredentials(String authorization) {
+        String[] none = {null, null};
+        if (authorization == null || !authorization.regionMatches(true, 0, "Basic ", 0, 6)) {
+            return none;
+        }
+        try {
+            String decoded = new String(Base64.getDecoder().decode(authorization.substring(6).trim()), StandardCharsets.UTF_8);
+            int colon = decoded.indexOf(':');
+            return colon < 0 ? none : new String[] {URLDecoder.decode(decoded.substring(0, colon), StandardCharsets.UTF_8),
+                    URLDecoder.decode(decoded.substring(colon + 1), StandardCharsets.UTF_8)};
+        } catch (IllegalArgumentException e) {
+            return none;
+        }
     }
 
     // RN-F1-11.4

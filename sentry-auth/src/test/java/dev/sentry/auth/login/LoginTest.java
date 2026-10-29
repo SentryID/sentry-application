@@ -1,4 +1,4 @@
-package dev.sentry.auth.direct;
+package dev.sentry.auth.login;
 
 import static dev.sentry.auth.OAuthFixtures.PASSWORD;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -41,7 +41,7 @@ import org.springframework.test.web.servlet.ResultActions;
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
 @ExtendWith(OutputCaptureExtension.class)
-class DirectLoginTest {
+class LoginTest {
 
     private static final String SECRET = "segredo-do-sistema-confiavel";
     private static final List<String> CLIENTS = List.of("DIR_TRUSTED", "DIR_PLAIN", "DIR_PUB");

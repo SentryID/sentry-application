@@ -1,8 +1,6 @@
 package dev.sentry.auth.oauth;
 
-import dev.sentry.api.domain.accesslog.AccessLog.Channel;
-import dev.sentry.auth.provider.LoginAttempt;
-import dev.sentry.auth.web.LoginPageController;
+import dev.sentry.auth.web.LoginPageService;
 import dev.sentry.auth.web.PromptLoginFilter;
 import dev.sentry.auth.web.SsoLogout;
 import jakarta.servlet.FilterChain;
@@ -108,19 +106,16 @@ public class AuthorizationServerConfiguration {
 
     @Bean
     @Order(3)
-    SecurityFilterChain applicationFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain applicationFilterChain(HttpSecurity http, LoginPageService loginPageService) throws Exception {
         http.authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/actuator/health/**", "/error", "/css/**", SsoLogout.LOGGED_OUT_PATH,
                                 "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .anyRequest().authenticated())
                 // F1-04: tela própria; os detalhes levam o sistema do fluxo, o IP e o User-Agent ao provedor
                 .formLogin(form -> form.loginPage("/login").permitAll()
-                        .authenticationDetailsSource(request -> new LoginAttempt(
-                                LoginPageController.requestedClientId(request), Channel.PKCE,
-                                request.getRemoteAddr(), request.getHeader("User-Agent")))
+                        .authenticationDetailsSource(loginPageService::loginAttempt)
                         .failureHandler((request, response, exception) -> {
-                            request.getSession().setAttribute(LoginPageController.LAST_USERNAME,
-                                    request.getParameter("username"));
+                            loginPageService.rememberFailedUsername(request);
                             response.sendRedirect(request.getContextPath() + "/login?error");
                         }))
                 // RN-F1-04.6: X-Frame-Options DENY e Cache-Control no-store já são o padrão do Spring Security

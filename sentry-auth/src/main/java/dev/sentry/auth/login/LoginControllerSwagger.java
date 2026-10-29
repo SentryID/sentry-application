@@ -1,4 +1,4 @@
-package dev.sentry.auth.direct;
+package dev.sentry.auth.login;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -15,14 +15,13 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Tag(name = "Login direto", description = "Autenticação por API para sistemas confiáveis (F1-11)")
 @SecurityScheme(name = "clientBasic", type = SecuritySchemeType.HTTP, scheme = "basic",
         description = "client_id e client_secret do sistema confidencial e confiável")
 @RequestMapping("/api/v1/auth")
-public interface DirectLoginControllerSwagger {
+public interface LoginControllerSwagger {
 
     @Operation(summary = "Autentica um usuário por usuário e senha",
             description = "Só para sistemas CONFIDENTIAL marcados como confiáveis, autenticados por HTTP Basic. Devolve os mesmos "
@@ -31,15 +30,14 @@ public interface DirectLoginControllerSwagger {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Usuário autenticado"),
             @ApiResponse(responseCode = "400", description = "Escopo não permitido ou requisição sem HTTPS",
-                    content = @Content(schema = @Schema(implementation = DirectLoginRest.ErrorResponse.class))),
+                    content = @Content(schema = @Schema(implementation = LoginRest.ErrorResponse.class))),
             @ApiResponse(responseCode = "401", description = "Sistema não autenticado (invalid_client) ou usuário ou senha inválidos (invalid_grant)",
-                    content = @Content(schema = @Schema(implementation = DirectLoginRest.ErrorResponse.class))),
+                    content = @Content(schema = @Schema(implementation = LoginRest.ErrorResponse.class))),
             @ApiResponse(responseCode = "403", description = "Sistema não é confiável (unauthorized_client)",
-                    content = @Content(schema = @Schema(implementation = DirectLoginRest.ErrorResponse.class)))
+                    content = @Content(schema = @Schema(implementation = LoginRest.ErrorResponse.class)))
     })
     @PostMapping("/login")
-    ResponseEntity<DirectLoginRest.TokenResponse> login(
-            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorization,
-            @RequestBody @Valid DirectLoginRest.LoginRequest request,
+    ResponseEntity<LoginRest.TokenResponse> login(
+            @RequestBody @Valid LoginRest.LoginRequest request,
             @Parameter(hidden = true) HttpServletRequest httpRequest);
 }

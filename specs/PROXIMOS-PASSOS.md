@@ -62,6 +62,18 @@ Questões em aberto da Fase 1, recomendações aceitas em 29/10:
 
 - Trocar a senha exposta no commit `77462ee` em todo lugar onde é usada (RN-F0-03.2).
 
+## Refatoração do sentry-auth em andamento (branch `refactor/auth-api`)
+
+Pedido do usuário: o `sentry-auth` vira só backend, chamado pelo front-end em React (sem telas), o login direto passa ao domínio de login, nenhuma regra fica em controller e o tratamento de exceções é global.
+
+Primeira etapa, feita:
+
+- O login direto saiu do pacote `direct` e está em `dev.sentry.auth.login` (`LoginController`, `LoginControllerSwagger`, `LoginService`, `LoginRest`, `LoginException`).
+- Regras que estavam em controllers e foram para services: no `LoginController`, a exigência de HTTPS fora de localhost, a leitura do HTTP Basic e a montagem do erro OAuth (agora no `LoginService` e no handler global); no `LoginPageController`, a busca do sistema que pediu o login e o username da última falha (agora no `LoginPageService`, que também atende a configuração do formulário). Os controllers do `sentry-backend` já só delegavam.
+- Um `@RestControllerAdvice` por aplicação: `dev.sentry.auth.GlobalExceptionHandler` (erros OAuth do login direto) e `dev.sentry.backend.GlobalExceptionHandler` (Problem Details, antes ligado por configuração).
+
+Pendente de decisão do usuário: como o React faz login sem as telas (próxima etapa), e se até as anotações Bean Validation dos DTOs (`@Valid`, `@NotBlank`) devem sair para os services.
+
 ## Próximo passo: revisar a spec da Fase 2
 
 A spec da Fase 2 está em `specs/fase-2/` (F2-01 a F2-06) e no `ROADMAP.md` (tarefas 2.1 a 2.11), com status `Proposto`. A implementação começa depois da revisão: cada arquivo tem **Questões em aberto** com a recomendação.

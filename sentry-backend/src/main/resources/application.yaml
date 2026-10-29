@@ -8,10 +8,6 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
-  # erros em Problem Details (RFC 9457), com a mensagem em português no campo detail
-  mvc:
-    problemdetails:
-      enabled: true
 
 server:
   port: 8080

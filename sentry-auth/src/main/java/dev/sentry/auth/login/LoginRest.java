@@ -1,4 +1,4 @@
-package dev.sentry.auth.direct;
+package dev.sentry.auth.login;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -7,7 +7,7 @@ import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import jakarta.validation.constraints.NotBlank;
 
 /** Contratos do login direto (F1-11). */
-public interface DirectLoginRest {
+public interface LoginRest {
 
     @Schema(description = "Credenciais do usuário; o sistema chamador se autentica por HTTP Basic")
     record LoginRequest(

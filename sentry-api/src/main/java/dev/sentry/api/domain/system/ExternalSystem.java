@@ -1,9 +1,14 @@
 package dev.sentry.api.domain.system;
 
 import dev.sentry.api.domain.organization.Organization;
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Embeddable;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -12,6 +17,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
@@ -37,7 +44,8 @@ public class ExternalSystem {
     @JoinColumn(name = "id_organization", nullable = false)
     private Organization organization;
 
-    @Column(name = "external_code", unique = true)
+    /** Também é o {@code client_id} OAuth do sistema (RN-F1-01.1). */
+    @Column(name = "external_code", nullable = false, unique = true)
     private String externalCode;
 
     @Column(name = "description")
@@ -46,8 +54,23 @@ public class ExternalSystem {
     @Column(name = "url")
     private String url;
 
+    /** Escopos permitidos, separados por espaço (RN-F1-01.6). */
     @Column(name = "scopes")
     private String scopes;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "client_type", nullable = false)
+    private ClientType clientType = ClientType.CONFIDENTIAL;
+
+    @Column(name = "client_secret_hash")
+    private String clientSecretHash;
+
+    @Column(name = "is_trusted", nullable = false)
+    private Boolean isTrusted = false;
+
+    @ElementCollection
+    @CollectionTable(name = "system_redirect_uris", joinColumns = @JoinColumn(name = "id_system"))
+    private Set<RedirectUri> redirectUris = new HashSet<>();
 
     @Column(nullable = false, unique = true, updatable = false)
     private UUID uuid = UUID.randomUUID();
@@ -73,4 +96,15 @@ public class ExternalSystem {
     @LastModifiedDate
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    public enum ClientType { PUBLIC, CONFIDENTIAL }
+
+    public enum UriType { LOGIN, LOGOUT }
+
+    /** URI de redirecionamento, comparada por igualdade exata (RN-F1-01.4). */
+    @Embeddable
+    public record RedirectUri(
+            @Column(name = "uri", nullable = false, length = 2048) String uri,
+            @Enumerated(EnumType.STRING) @Column(name = "uri_type", nullable = false) UriType type) {
+    }
 }

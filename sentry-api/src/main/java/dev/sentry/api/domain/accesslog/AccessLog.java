@@ -5,6 +5,8 @@ import dev.sentry.api.domain.user.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -47,4 +49,17 @@ public class AccessLog {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_system")
     private ExternalSystem system;
+
+    /** Username digitado, guardado mesmo quando o usuário não existe (RN-F1-10.3). */
+    @Column(name = "attempted_username")
+    private String attemptedUsername;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "channel")
+    private Channel channel;
+
+    @Column(name = "user_agent", length = 512)
+    private String userAgent;
+
+    public enum Channel { PKCE, DIRECT }
 }

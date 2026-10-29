@@ -1,4 +1,4 @@
-# Próximos passos — Fase 0
+# Próximos passos — Fases 0 e 1
 
 Situação em 29/10/2026. O `init` já foi integrado ao `main`; a 0.6, a 0.7, a 0.4 e a 0.5 estão na branch `fase-0/argon2id` (PR aberto); a 0.8 e a Fase 1 seguem na `fase-1/clientes-oauth`, criada a partir dela.
 
@@ -14,6 +14,7 @@ Situação em 29/10/2026. O `init` já foi integrado ao `main`; a 0.6, a 0.7, a 
 | 0.4 | `compose.yaml` com `postgres:17-alpine` (volume nomeado, healthcheck `pg_isready`), `sentry-auth` e `sentry-backend`; `Dockerfile` multi-stage na raiz (`ARG MODULE`; build com `maven:3-eclipse-temurin-27`, runtime `eclipse-temurin:27-jre-alpine`, usuário `sentry`); actuator só com `health` e probes; `sentry.issuer-url` (`SENTRY_ISSUER_URL`, padrão `http://localhost:8081`); `.env.example` completo; `README.md`. CA-F0-04.1 a .3 verificados à mão: tudo `UP` em ~30 s com build, bootstrap roda de novo após `down -v`, processo não é root | branch `fase-0/argon2id` |
 | 0.5 | `.github/workflows/ci.yml` em todo push e pull request: job `build` (Temurin 27, `./mvnw -B verify` com Testcontainers, cobertura de linhas por módulo no resumo do job, relatórios JaCoCo e surefire como artifact) e job `gitleaks` (CLI `zricethezav/gitleaks:v8.30.1` no histórico inteiro); JaCoCo no `pom.xml` raiz; `.github/dependabot.yml` semanal para maven, github-actions e docker. Gitleaks local sem achados no histórico; CA-F0-05.2 verificado com uma chave PEM falsa. Cobertura de linhas em 29/10: `sentry-auth` 92,6%, `sentry-backend` 31,0%, `sentry-api` 14,4% (só os testes do próprio módulo contam) | branch `fase-0/argon2id` |
 | 0.8 | Job `image` no `ci.yml`: em push no `main`, depois de `build` e `gitleaks` verdes, publica `ghcr.io/<owner em minúsculas>/sentry-auth:<sha>` com o `GITHUB_TOKEN` (`packages: write`). A proteção do `main` fica com o usuário | branch `fase-1/clientes-oauth` |
+| 1.1 | Migração `V2__oauth_clients_and_sessions.sql`: `systems` ganha `client_type`, `client_secret_hash`, `is_trusted` e `external_code NOT NULL` (é o `client_id`); `system_redirect_uris` (`LOGIN`/`LOGOUT`); `access_logs` ganha `attempted_username`, `channel` e `user_agent`; `oauth2_authorization`, `oauth2_authorization_consent` (Spring Authorization Server 7.1) e `spring_session*` (Spring Session JDBC 4.1), adaptados ao PostgreSQL. Entidades `ExternalSystem` e `AccessLog` ajustadas para o `ddl-auto: validate` | branch `fase-1/clientes-oauth` |
 
 Achados que a spec não previa, já tratados:
 
@@ -48,7 +49,12 @@ Questões em aberto da Fase 1, recomendações aceitas em 29/10:
 
 - Trocar a senha exposta no commit `77462ee` em todo lugar onde é usada (RN-F0-03.2).
 
-## Próximo passo: 1.1 — Migração V2 (Fase 1)
+## Próximo passo: 1.2 — CRUD de cliente OAuth (F1-01)
+
+Notas da 1.1:
+
+- Sistemas que já existiam ficam `CONFIDENTIAL` sem segredo, o que não autentica até alguém rotacionar o segredo ou trocar o tipo.
+- A tabela `oauth2_registered_client` não foi criada: os clientes vêm de `systems` (F1-01).
 
 Falta da Fase 0, com o usuário:
 

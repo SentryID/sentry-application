@@ -11,7 +11,7 @@ este documento só descreve o padrão.
 
 ## Estrutura do projeto
 
-Multi-módulo Maven, parent `br.com.sentry:sentry` (Java 25, Spring Boot 4.x):
+Multi-módulo Maven, parent `br.com.sentry:sentry` (Java 27, Spring Boot 4.x):
 
 - **sentry-api** (`dev.sentry.api`) — biblioteca compartilhada. Entidades, DTOs,
   mappers, repositories, services, specifications. Sem `main`. Publicada via

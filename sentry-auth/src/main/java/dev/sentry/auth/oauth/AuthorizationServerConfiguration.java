@@ -21,6 +21,7 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
@@ -90,11 +91,27 @@ public class AuthorizationServerConfiguration {
         return http.build();
     }
 
+    /**
+     * F1-11: o login direto autentica o sistema no próprio endpoint (HTTP Basic) e não cria sessão SSO (RN-F1-11.8);
+     * sem sessão, também não há CSRF a proteger.
+     */
     @Bean
     @Order(2)
+    SecurityFilterChain directLoginFilterChain(HttpSecurity http) throws Exception {
+        http.securityMatcher("/api/v1/auth/**")
+                .authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .requestCache(cache -> cache.disable())
+                .csrf(csrf -> csrf.disable());
+        return http.build();
+    }
+
+    @Bean
+    @Order(3)
     SecurityFilterChain applicationFilterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/actuator/health/**", "/error", "/css/**", SsoLogout.LOGGED_OUT_PATH).permitAll()
+                        .requestMatchers("/actuator/health/**", "/error", "/css/**", SsoLogout.LOGGED_OUT_PATH,
+                                "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .anyRequest().authenticated())
                 // F1-04: tela própria; os detalhes levam o sistema do fluxo, o IP e o User-Agent ao provedor
                 .formLogin(form -> form.loginPage("/login").permitAll()

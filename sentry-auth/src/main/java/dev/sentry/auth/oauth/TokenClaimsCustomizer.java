@@ -25,7 +25,10 @@ import org.springframework.stereotype.Component;
 @Component
 public class TokenClaimsCustomizer implements OAuth2TokenCustomizer<JwtEncodingContext> {
 
-    /** Atributo da autorização com o instante do login em segundos, usado quando não há código de autorização. */
+    /**
+     * Atributo da autorização com o instante do login em segundos, usado quando não há código de autorização. É texto
+     * porque o Authorization Server grava os atributos em JSON e só aceita tipos conhecidos.
+     */
     public static final String LOGIN_TIME_ATTRIBUTE = "sentry.login_time";
 
     private static final Logger log = LoggerFactory.getLogger(TokenClaimsCustomizer.class);
@@ -99,9 +102,9 @@ public class TokenClaimsCustomizer implements OAuth2TokenCustomizer<JwtEncodingC
      * {@value #LOGIN_TIME_ATTRIBUTE} gravado pelo login direto (F1-11).
      */
     static Instant loginTime(OAuth2Authorization authorization) {
-        Object loginTime = authorization.getAttribute(LOGIN_TIME_ATTRIBUTE);
+        String loginTime = authorization.getAttribute(LOGIN_TIME_ATTRIBUTE);
         if (loginTime != null) {
-            return Instant.ofEpochSecond(((Number) loginTime).longValue());
+            return Instant.ofEpochSecond(Long.parseLong(loginTime));
         }
         return authorization.getToken(OAuth2AuthorizationCode.class).getToken().getIssuedAt();
     }

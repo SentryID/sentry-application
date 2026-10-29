@@ -25,6 +25,7 @@ Situação em 29/10/2026. O `init` já foi integrado ao `main`; a 0.6, a 0.7, a 
 | 1.9 | Refresh token opaco só com `offline_access` concedido; gravado como SHA-256 (`HashedRefreshTokenAuthorizationService`); rotação a cada uso; reapresentar um token já rotacionado revoga a autorização inteira (V4: `oauth2_rotated_refresh_tokens`); vida de 30 dias sem uso e máxima de 90 dias contada do login; usuário inativo recebe `invalid_grant` e sistema inativo `invalid_client`; preso ao `client_id`; `/oauth2/revoke` (RFC 7009). Testes CA-F1-06.1 a .5 | branch `fase-1/clientes-oauth` |
 | 1.10 | `GET /userinfo` com access token Bearer: `UserInfoMapper` lê o usuário do banco na hora (`sub`; `name`/`preferred_username` com `profile`; `email` com `email`); token sem `openid` recebe `403` e usuário inativo `401`, os dois com `WWW-Authenticate: Bearer error=...`; o decodificador de access tokens aceita só `typ=at+jwt` (RFC 9068). Testes CA-F1-08.1 a .3 e RN-F1-08.4 | branch `fase-1/clientes-oauth` |
 | 1.11 | Sessão SSO no PostgreSQL (Spring Session JDBC), cookie `HttpOnly`/`SameSite=Lax`/`Secure` em HTTPS, renovada no login, 30 min sem uso e 12 h no máximo (`SENTRY_SESSION_IDLE_TIMEOUT`, `SENTRY_SESSION_MAX_AGE`); `prompt=login` encerra a sessão e pede a senha; `/connect/logout` revoga todas as autorizações da sessão (`sid`), volta à `post_logout_redirect_uri` cadastrada com o `state` e, com URI não cadastrada, encerra a sessão e mostra a página do Sentry; o papel no sistema passou a ser exigido também na emissão do token (SSO e refresh). Testes CA-F1-09.1 a .5 | branch `fase-1/clientes-oauth` |
+| 1.12 | `POST /api/v1/auth/login`: o sistema se autentica por HTTP Basic (só `CONFIDENTIAL`; público ou segredo errado → `401 invalid_client`; não confiável → `403 unauthorized_client`); usuário validado pelos mesmos provedores da tela, com canal `DIRECT` no `access_logs`; mesmos tokens do fluxo PKCE (escopo padrão `openid profile`, refresh só com `offline_access`), gravados como autorização para o refresh funcionar no `/oauth2/token`; cadeia sem sessão (não cria SSO) e sem CSRF; só HTTPS fora de localhost; documentado no OpenAPI (`/v3/api-docs`, `/swagger-ui.html`). Testes CA-F1-11.1 a .6 e CA-F1-10.4 (nenhum log com senha ou token) | branch `fase-1/clientes-oauth` |
 
 Achados que a spec não previa, já tratados:
 
@@ -59,7 +60,7 @@ Questões em aberto da Fase 1, recomendações aceitas em 29/10:
 
 - Trocar a senha exposta no commit `77462ee` em todo lugar onde é usada (RN-F0-03.2).
 
-## Próximo passo: 1.12 — Login direto para sistemas confiáveis (F1-11)
+## Próximo passo: 1.13 — Aplicação de exemplo e teste ponta a ponta (F1-03)
 
 Notas da 1.11:
 

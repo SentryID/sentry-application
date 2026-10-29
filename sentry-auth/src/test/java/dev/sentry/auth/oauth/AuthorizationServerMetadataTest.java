@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import dev.sentry.auth.OAuthFixtures;
 import dev.sentry.auth.TestcontainersConfiguration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -75,14 +76,10 @@ class AuthorizationServerMetadataTest {
                 FROM organizations WHERE external_code = 'ORG_OFF'""");
         jdbcTemplate.update("""
                 INSERT INTO system_redirect_uris (id_system, uri, uri_type)
-                SELECT id_system, 'http://localhost:3000/cb', 'LOGIN' FROM systems WHERE external_code = 'SYS_OFF'""");
-
-        mockMvc.perform(get("/oauth2/authorize")
-                        .param("response_type", "code").param("client_id", "SYS_OFF")
-                        .param("redirect_uri", "http://localhost:3000/cb").param("scope", "openid")
-                        .param("code_challenge", "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM")
-                        .param("code_challenge_method", "S256"))
+                SELECT id_system, ?, 'LOGIN' FROM systems WHERE external_code = 'SYS_OFF'""", OAuthFixtures.REDIRECT_URI);
+        mockMvc.perform(get(OAuthFixtures.authorizeUrl("SYS_OFF", "openid")).accept("text/html"))
                 .andExpect(status().isBadRequest())
+                .andExpect(status().reason(containsString("client_id")))
                 .andExpect(header().doesNotExist("Location"));
     }
 }

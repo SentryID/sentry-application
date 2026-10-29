@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="#{error.title} + ' · ' + #{brand}">Não foi possível continuar · Sentry</title>
+    <link rel="stylesheet" th:href="@{/css/sentry.css}">
+</head>
+<body>
+<main class="card">
+    <p class="brand" th:text="#{brand}">Sentry</p>
+    <h1 th:text="#{error.title}">Não foi possível continuar</h1>
+    <p th:text="#{error.message}">O pedido de autenticação é inválido ou expirou.</p>
+</main>
+</body>
+</html>

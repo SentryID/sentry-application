@@ -88,7 +88,7 @@ public interface SystemRest {
             String scopes,
             @Schema(description = "Tipo de cliente OAuth: PUBLIC (SPA/mobile) ou CONFIDENTIAL (com backend e segredo)", example = "CONFIDENTIAL", requiredMode = RequiredMode.REQUIRED)
             @NotNull ClientType clientType,
-            @Schema(description = "URIs de redirecionamento após o login (https; http só para localhost e 127.0.0.1)", example = "[\"https://portal.sentry.dev/callback\"]")
+            @Schema(description = "URIs de redirecionamento após o login (https; http só para 127.0.0.1)", example = "[\"https://portal.sentry.dev/callback\"]")
             List<String> redirectUris,
             @Schema(description = "URIs de redirecionamento após o logout", example = "[\"https://portal.sentry.dev\"]")
             List<String> postLogoutRedirectUris,
@@ -110,7 +110,7 @@ public interface SystemRest {
             String scopes,
             @Schema(description = "Tipo de cliente OAuth: PUBLIC (SPA/mobile) ou CONFIDENTIAL (com backend e segredo)", example = "CONFIDENTIAL")
             ClientType clientType,
-            @Schema(description = "URIs de redirecionamento após o login (https; http só para localhost e 127.0.0.1)", example = "[\"https://portal.sentry.dev/callback\"]")
+            @Schema(description = "URIs de redirecionamento após o login (https; http só para 127.0.0.1)", example = "[\"https://portal.sentry.dev/callback\"]")
             List<String> redirectUris,
             @Schema(description = "URIs de redirecionamento após o logout", example = "[\"https://portal.sentry.dev\"]")
             List<String> postLogoutRedirectUris,

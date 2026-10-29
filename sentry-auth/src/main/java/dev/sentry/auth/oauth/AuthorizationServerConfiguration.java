@@ -1,5 +1,8 @@
 package dev.sentry.auth.oauth;
 
+import dev.sentry.api.domain.accesslog.AccessLog.Channel;
+import dev.sentry.auth.provider.LoginAttempt;
+import dev.sentry.auth.web.LoginPageController;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,6 +38,8 @@ public class AuthorizationServerConfiguration {
     // RN-F1-03.8: só os fluxos usados na Fase 1 aparecem na descoberta
     private static final List<String> GRANT_TYPES = List.of("authorization_code", "refresh_token");
     private static final List<String> CLIENT_AUTH_METHODS = List.of("client_secret_basic", "client_secret_post", "none");
+    private static final String CONTENT_SECURITY_POLICY =
+            "default-src 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'";
     private static final Set<String> CACHEABLE_PATHS =
             Set.of("/.well-known/openid-configuration", "/.well-known/oauth-authorization-server", "/oauth2/jwks");
 
@@ -64,9 +69,20 @@ public class AuthorizationServerConfiguration {
     @Order(2)
     SecurityFilterChain applicationFilterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/actuator/health/**", "/error").permitAll()
+                        .requestMatchers("/actuator/health/**", "/error", "/css/**").permitAll()
                         .anyRequest().authenticated())
-                .formLogin(Customizer.withDefaults());
+                // F1-04: tela própria; os detalhes levam o sistema do fluxo, o IP e o User-Agent ao provedor
+                .formLogin(form -> form.loginPage("/login").permitAll()
+                        .authenticationDetailsSource(request -> new LoginAttempt(
+                                LoginPageController.requestedClientId(request), Channel.PKCE,
+                                request.getRemoteAddr(), request.getHeader("User-Agent")))
+                        .failureHandler((request, response, exception) -> {
+                            request.getSession().setAttribute(LoginPageController.LAST_USERNAME,
+                                    request.getParameter("username"));
+                            response.sendRedirect(request.getContextPath() + "/login?error");
+                        }))
+                // RN-F1-04.6: X-Frame-Options DENY e Cache-Control no-store já são o padrão do Spring Security
+                .headers(headers -> headers.contentSecurityPolicy(csp -> csp.policyDirectives(CONTENT_SECURITY_POLICY)));
         return http.build();
     }
 

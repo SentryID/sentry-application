@@ -81,7 +81,7 @@ class SystemServiceTest {
         mapToEntity(ClientType.PUBLIC);
 
         SystemRest.ClientCredentials credentials =
-                systemService.save(saveRequest(ClientType.PUBLIC, "openid", List.of("http://localhost:3000/cb")));
+                systemService.save(saveRequest(ClientType.PUBLIC, "openid", List.of("http://127.0.0.1:3000/cb")));
 
         assertNull(credentials.clientSecret());
         assertNull(captureSaved().getClientSecretHash());
@@ -102,7 +102,7 @@ class SystemServiceTest {
     // CA-F1-01.2 e RN-F1-01.5
     @ParameterizedTest
     @ValueSource(strings = {"http://app.exemplo.com/cb", "ftp://app.exemplo.com/cb", "/cb", "https://app.exemplo.com/cb#x",
-            "http://localhost.exemplo.com/cb", "nao é uri"})
+            "http://localhost.exemplo.com/cb", "http://localhost:3000/cb", "nao é uri"})
     void saveRejectsInvalidRedirectUri(String uri) {
         mapToEntity(ClientType.PUBLIC);
 
@@ -115,8 +115,7 @@ class SystemServiceTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"https://app.exemplo.com/cb", "http://localhost:3000/cb", "http://127.0.0.1:8080/cb",
-            "http://localhost/cb"})
+    @ValueSource(strings = {"https://app.exemplo.com/cb", "http://127.0.0.1:3000/cb", "http://127.0.0.1/cb"})
     void saveAcceptsHttpsAndLocalRedirectUri(String uri) {
         mapToEntity(ClientType.PUBLIC);
 

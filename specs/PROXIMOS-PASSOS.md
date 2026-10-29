@@ -19,6 +19,7 @@ Situação em 29/10/2026. O `init` já foi integrado ao `main`; a 0.6, a 0.7, a 
 | 1.3 | `DatabaseAuthenticationProvider` (um `AuthenticationProvider` do Spring Security): username sem diferenciar maiúsculas (índice único `lower(username)` na V3), usuário ativo, `DATABASE`, senha conferindo, sistema ativo e papel ativo no sistema; mensagem única "Usuário ou senha inválidos"; hash simulado para usuário inexistente; principal = `uuid` do usuário; re-hash da 0.6 gravado no login. Testes CA-F1-02.1 a .5 | branch `fase-1/clientes-oauth` |
 | 1.4 | `AccessLogService.recordAttempt` grava toda tentativa (usuário, sistema, `attempted_username`, resultado, canal, IP, User-Agent) em transação própria e nunca derruba o login; o `DatabaseAuthenticationProvider` registra o motivo real; IP via `server.forward-headers-strategy: native` (X-Forwarded-For só de proxy confiável); log do sentry-auth em JSON (ECS). Testes CA-F1-10.1 a .3 | branch `fase-1/clientes-oauth` |
 | 1.5 | Spring Authorization Server configurado no sentry-auth: `SystemRegisteredClientRepository` lê os clientes de `systems` (client_id = external_code; PKCE obrigatório; sem consentimento; código de 60 s; refresh com rotação), autorizações em `oauth2_authorization` (JDBC), issuer = `SENTRY_ISSUER_URL`; chave RS256 de `SENTRY_JWT_SIGNING_KEY` (PEM), anterior em `SENTRY_JWT_PREVIOUS_KEY` só no JWKS, kid = thumbprint; sem chave o serviço não sobe, salvo `SENTRY_JWT_GENERATE_IF_MISSING=true`; descoberta só com `authorization_code`/`refresh_token` e cache de 300 s. Testes CA-F1-07.1, .3, .4 e CA-F1-01.3 | branch `fase-1/clientes-oauth` |
+| 1.6 | Tela `GET /login` em Thymeleaf com a identidade do Sentry, nome do sistema que pediu o login, CSRF, mensagem genérica com o username preenchido e a senha vazia, textos em `messages.properties`, CSP restritiva, `X-Frame-Options: DENY` e `Cache-Control: no-store`; página de erro própria (`error.html`) para pedidos de autorização inválidos. O `LoginController` JSON antigo saiu (RN-F1-03.10). Testes CA-F1-04.1 a .4 | branch `fase-1/clientes-oauth` |
 
 Achados que a spec não previa, já tratados:
 
@@ -53,7 +54,13 @@ Questões em aberto da Fase 1, recomendações aceitas em 29/10:
 
 - Trocar a senha exposta no commit `77462ee` em todo lugar onde é usada (RN-F0-03.2).
 
-## Próximo passo: 1.6 — Tela de login (F1-04)
+## Próximo passo: 1.7 — Fluxo Authorization Code + PKCE (F1-03)
+
+Notas da 1.6:
+
+- **Decisão nova (revisar):** URIs de redirecionamento locais usam `http://127.0.0.1`, não `http://localhost`. O Authorization Server do Spring segue o OAuth 2.1 (RFC 8252, 8.3) e recusa `localhost`; a validação dele também faz a checagem do PKCE e não pode ser trocada só na parte das URIs. O `sentry-backend` passou a recusar `localhost` com mensagem clara (ajuste da RN-F1-01.5).
+- O `LoginController` JSON foi removido já na 1.6, porque `POST /login` passou a ser o envio da tela; o `POST /api/v1/auth/login` que o substitui entra na 1.12.
+- A tela aberta direto, sem um fluxo de autorização, não tem sistema e por isso nunca autentica (`SYSTEM_INACTIVE`). Não há console do Sentry na Fase 1.
 
 Notas da 1.5:
 

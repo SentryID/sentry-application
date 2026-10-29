@@ -149,7 +149,8 @@ public class SystemService {
         uris.forEach(uri -> system.getRedirectUris().add(new RedirectUri(uri, type)));
     }
 
-    // RN-F1-01.4 e RN-F1-01.5: https, ou http só em localhost/127.0.0.1; sem fragmento
+    // RN-F1-01.4 e RN-F1-01.5: https, ou http só em 127.0.0.1; sem fragmento. localhost fica de fora como no OAuth 2.1
+    // (RFC 8252, 8.3), que o Authorization Server do Spring segue e recusaria no fluxo
     private static void validateRedirectUri(String value) {
         URI uri = null;
         try {
@@ -158,11 +159,10 @@ public class SystemService {
             // tratada abaixo como URI inválida
         }
         boolean secure = uri != null && "https".equals(uri.getScheme()) && uri.getHost() != null;
-        boolean local = uri != null && "http".equals(uri.getScheme())
-                && ("localhost".equals(uri.getHost()) || "127.0.0.1".equals(uri.getHost()));
+        boolean local = uri != null && "http".equals(uri.getScheme()) && "127.0.0.1".equals(uri.getHost());
         if (!(secure || local) || uri.getFragment() != null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "URI de redirecionamento inválida: " + value
-                    + ". Use https (http só para localhost e 127.0.0.1) e não use fragmento (#)");
+                    + ". Use https (http só para 127.0.0.1; localhost não é aceito) e não use fragmento (#)");
         }
     }
 }

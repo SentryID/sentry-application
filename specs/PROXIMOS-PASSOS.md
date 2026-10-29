@@ -1,6 +1,6 @@
 # Próximos passos — Fase 0
 
-Situação em 29/10/2026. O `init` já foi integrado ao `main`; a 0.6, a 0.7, a 0.4 e a 0.5 estão na branch `fase-0/argon2id`.
+Situação em 29/10/2026. O `init` já foi integrado ao `main`; a 0.6, a 0.7, a 0.4 e a 0.5 estão na branch `fase-0/argon2id` (PR aberto); a 0.8 e a Fase 1 seguem na `fase-1/clientes-oauth`, criada a partir dela.
 
 ## Feito
 
@@ -13,6 +13,7 @@ Situação em 29/10/2026. O `init` já foi integrado ao `main`; a 0.6, a 0.7, a 
 | 0.7 | `BootstrapService` no `sentry-auth`: na primeira subida cria a organização `SENTRY_PLATFORM`, o sistema `SENTRY`, o papel `SENTRY.ADMIN` e o administrador (`SENTRY_ADMIN_USERNAME`, `SENTRY_ADMIN_EMAIL`, `SENTRY_ADMIN_PASSWORD`); sem senha, gera uma de 24 caracteres e a mostra uma vez no log; idempotente pela organização; testes CA-F0-03.1 a .3 | branch `fase-0/argon2id` |
 | 0.4 | `compose.yaml` com `postgres:17-alpine` (volume nomeado, healthcheck `pg_isready`), `sentry-auth` e `sentry-backend`; `Dockerfile` multi-stage na raiz (`ARG MODULE`; build com `maven:3-eclipse-temurin-27`, runtime `eclipse-temurin:27-jre-alpine`, usuário `sentry`); actuator só com `health` e probes; `sentry.issuer-url` (`SENTRY_ISSUER_URL`, padrão `http://localhost:8081`); `.env.example` completo; `README.md`. CA-F0-04.1 a .3 verificados à mão: tudo `UP` em ~30 s com build, bootstrap roda de novo após `down -v`, processo não é root | branch `fase-0/argon2id` |
 | 0.5 | `.github/workflows/ci.yml` em todo push e pull request: job `build` (Temurin 27, `./mvnw -B verify` com Testcontainers, cobertura de linhas por módulo no resumo do job, relatórios JaCoCo e surefire como artifact) e job `gitleaks` (CLI `zricethezav/gitleaks:v8.30.1` no histórico inteiro); JaCoCo no `pom.xml` raiz; `.github/dependabot.yml` semanal para maven, github-actions e docker. Gitleaks local sem achados no histórico; CA-F0-05.2 verificado com uma chave PEM falsa. Cobertura de linhas em 29/10: `sentry-auth` 92,6%, `sentry-backend` 31,0%, `sentry-api` 14,4% (só os testes do próprio módulo contam) | branch `fase-0/argon2id` |
+| 0.8 | Job `image` no `ci.yml`: em push no `main`, depois de `build` e `gitleaks` verdes, publica `ghcr.io/<owner em minúsculas>/sentry-auth:<sha>` com o `GITHUB_TOKEN` (`packages: write`). A proteção do `main` fica com o usuário | branch `fase-1/clientes-oauth` |
 
 Achados que a spec não previa, já tratados:
 
@@ -34,16 +35,25 @@ As recomendações das **Questões em aberto** da Fase 0 foram aceitas:
 - Não reescrever o histórico do Git: apenas trocar a senha exposta.
 - Política de senha (mínimo de 8 caracteres, bloqueio de senhas comuns) fica para a Fase 1.
 
+Questões em aberto da Fase 1, recomendações aceitas em 29/10:
+
+- `client_id` = `external_code` do sistema (F1-01).
+- Exigir papel no sistema para autenticar (RN-F1-02.5) já na Fase 1; login só por username, sem e-mail (F1-02).
+- Tela de login com a identidade visual do Sentry (F1-04).
+- Claim `org` já na Fase 1 (F1-05).
+- Back-channel logout fora da Fase 1 (F1-09).
+- Só o superadministrador da plataforma (papel `SENTRY.ADMIN`) marca um sistema como confiável (F1-11).
+
 ## Pendências fora do código
 
 - Trocar a senha exposta no commit `77462ee` em todo lugar onde é usada (RN-F0-03.2).
 
-## Próximo passo: 0.8 — Imagem no GHCR e proteção do `main`
+## Próximo passo: 1.1 — Migração V2 (Fase 1)
 
-A ordem segue: **0.8 → 0.9**. A CI da 0.5 só roda depois do push da branch, que fica com o usuário.
+Falta da Fase 0, com o usuário:
 
-- Publicar `ghcr.io/sentryid/sentry-auth:<sha>` em merge no `main` (RN-F0-05.6, CA-F0-05.3), reaproveitando o `Dockerfile` da 0.4.
-- Proteger o `main` (RN-F0-05.4, CA-F0-05.1): merge só por pull request e com os checks `build` e `gitleaks` verdes. É configuração do GitHub, feita pelo usuário.
+- Proteger o `main` (RN-F0-05.4, CA-F0-05.1): merge só por pull request e com os checks `build` e `gitleaks` verdes.
+- 0.9: mergear o PR da `fase-0/argon2id` no `main` e confirmar que a imagem aparece no GHCR (CA-F0-05.3).
 
 Decisões da 0.5 que valem revisar:
 
@@ -67,7 +77,6 @@ Decisões da 0.4 que valem revisar:
 
 | # | Tarefa | Ponto de atenção |
 | --- | --- | --- |
-| 0.8 | Imagem `ghcr.io/sentryid/sentry-auth:<sha>` no merge e proteção do `main` | Proteção do branch é configuração do GitHub, feita por quem administra o repositório |
 | 0.9 | Fechar a fase no `main` (o `init` já foi integrado) | Critério de saída da fase |
 
 ## Observação

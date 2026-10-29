@@ -50,3 +50,22 @@ jobs:
 
       # CLI em vez da gitleaks-action, que exige licença para repositórios de organização
       - run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.30.1 git /repo --no-banner --redact -v
+
+  # imagem do sentry-auth no GHCR a cada merge no main (RN-F0-05.6)
+  image:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [build, gitleaks]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      # o GHCR só aceita nomes em minúsculas (SentryID -> sentryid)
+      - run: |
+          IMAGE="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/sentry-auth:${GITHUB_SHA}"
+          docker build --build-arg MODULE=sentry-auth --build-arg PORT=8081 -t "$IMAGE" .
+          docker push "$IMAGE"

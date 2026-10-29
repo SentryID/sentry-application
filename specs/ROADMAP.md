@@ -1,6 +1,6 @@
-# Roadmap — sentry-auth, Fases 0 e 1
+# Roadmap — sentry-auth, Fases 0 a 2
 
-A Fase 0 deixa o projeto executável, seguro e testável; a Fase 1 entrega a autenticação de um usuário por um sistema externo, pelo fluxo PKCE e pelo login direto. Cada tarefa abaixo fecha quando os critérios de aceite citados viram testes verdes na CI.
+A Fase 0 deixa o projeto executável, seguro e testável; a Fase 1 entrega a autenticação de um usuário por um sistema externo, pelo fluxo PKCE e pelo login direto; a Fase 2 protege as contas (política de senha, recuperação, MFA, limitação de tentativas) e a administração. Cada tarefa abaixo fecha quando os critérios de aceite citados viram testes verdes na CI.
 
 ## Dependências
 
@@ -72,6 +72,54 @@ flowchart LR
 
 As tarefas 1.3 e 1.4 podem andar em paralelo com 1.2 e 1.5; 1.12 só depende de 1.3, 1.5 e 1.8, e pode ser feita antes de 1.11.
 
+## Fase 2 — Contas protegidas e administração segura
+
+**Critério de saída:** a API de cadastro só responde ao `SENTRY.ADMIN` autenticado pelo próprio Sentry; um usuário define, troca e recupera a senha seguindo a política, ativa o TOTP e passa a entrar com dois fatores; tentativas repetidas são freadas; e um sistema recebe os papéis do usuário no token quando pede o escopo `roles`.
+
+```mermaid
+flowchart LR
+  subgraph F2[Fase 2 · Contas protegidas]
+    F201[F2-01 Proteção do backend]
+    F202[F2-02 Política e troca de senha]
+    F205[F2-05 Limitação de tentativas]
+    F202 --> F203[F2-03 Recuperação de senha]
+    F205 --> F203
+    F202 --> F204[F2-04 MFA TOTP]
+    F206[F2-06 Papéis no token]
+  end
+  F105[F1-05 Tokens] --> F201
+  F108[F1-08 UserInfo] --> F201
+  F104[F1-04 Tela de login] --> F202
+  F110[F1-10 Registro de tentativas] --> F205
+  F105 --> F204
+  F105 --> F206
+```
+
+| # | Tarefa | Requisito | Critérios |
+| --- | --- | --- | --- |
+| 2.1 | Migração V5: `users.password_change_required` e `password_changed_at`; `password_tokens.token` com hash; `user_mfa`, `mfa_recovery_codes` e remoção de `mfa_tokens`; `systems.require_mfa`; índices de `access_logs` | F2-02, F2-03, F2-04, F2-05 | — |
+| 2.2 | `sentry-backend` como resource server do `sentry-auth`, exigindo `SENTRY.ADMIN` pelo banco, com auditoria (`created_by`, `updated_by`, `isTrusted`) | F2-01 | CA-F2-01.1 a .6 |
+| 2.3 | Bootstrap do sistema `SENTRY` como cliente público e Swagger UI do `sentry-backend` autenticado por PKCE | F2-01 | RN-F2-01.6, .7 |
+| 2.4 | `PasswordPolicy` no `sentry-api` (8 a 128, lista de senhas comuns, sem composição) aplicada no cadastro e no bootstrap | F2-02 | CA-F2-02.1 a .3 |
+| 2.5 | Troca obrigatória e voluntária de senha na tela, revogando sessões e refresh tokens; bloqueio no login direto | F2-02 | CA-F2-02.4 a .6 |
+| 2.6 | Limitação por conta e por IP a partir de `access_logs`, com bloqueio progressivo e desbloqueio pelo administrador | F2-05 | CA-F2-05.1 a .5 |
+| 2.7 | Recuperação de senha por e-mail com token em hash, SMTP configurável e Mailpit no Compose | F2-03 | CA-F2-03.1 a .6 |
+| 2.8 | Cadastro do TOTP (`/mfa/setup`, QR code, segredo cifrado, códigos de recuperação) | F2-04 | CA-F2-04.5 |
+| 2.9 | Segundo fator no login pela tela e no login direto, `amr`, `acr_values`, `require_mfa` e desativação pelo administrador | F2-04 | CA-F2-04.1 a .4, .6, .7 |
+| 2.10 | Escopo `roles`: papéis do sistema no access token e no `/userinfo` | F2-06 | CA-F2-06.1 a .4 |
+| 2.11 | Documentação: administração pela API, MFA, recuperação e papéis no token | Todos | — |
+
+A 2.1 vem antes de tudo. Depois dela, 2.2 e 2.3 (backend) andam em paralelo com 2.4 a 2.6 (senha e limites) e com 2.10 (papéis); a 2.7 depende da 2.4 e da 2.6, e a 2.9 depende da 2.8 e da 2.6.
+
+### Fora da Fase 2
+
+- Login via LDAP e login social.
+- Multi-tenant completo e administradores por organização.
+- Back-channel logout (avisar os outros sistemas no logout).
+- Passkeys (WebAuthn), CAPTCHA e lembrar o aparelho no MFA.
+- Ações no token, introspecção (RFC 7662) e o serviço `sentry-authorization`.
+- Console de administração com tela própria.
+
 ## Decisões pendentes que afetam o roadmap
 
 Cada arquivo tem uma seção **Questões em aberto**. As que mudam o plano:
@@ -79,3 +127,6 @@ Cada arquivo tem uma seção **Questões em aberto**. As que mudam o plano:
 - F1-02: exigir papel no sistema para autenticar (muda a tarefa 1.3).
 - F1-01: `client_id` = `external_code` ou `uuid` (muda a migração 1.1).
 - F0-04: incluir o `sentry-backend` no Compose (muda a tarefa 0.4).
+- F2-01: validar o papel `SENTRY.ADMIN` pelo banco ou por claim (muda a tarefa 2.2).
+- F2-04: remover a tabela `mfa_tokens` (muda a migração 2.1).
+- F2-05: contar falhas por conta ou por conta + IP (muda a tarefa 2.6).

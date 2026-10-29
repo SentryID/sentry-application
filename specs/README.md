@@ -1,8 +1,8 @@
-# Spec do sentry-auth — Fases 0 e 1
+# Spec do sentry-auth — Fases 0 a 2
 
 Especificação no estilo Spec Driven Development: cada requisito vive no seu próprio arquivo, é validado antes de virar código, e cada critério de aceite vira pelo menos um teste automatizado.
 
-**Escopo deste pacote:** apenas o módulo `sentry-auth`, e apenas a autenticação de um usuário a pedido de um sistema externo. Autorização (papéis, ações, `sentry-authorization`), console, SDKs e MFA ficam fora.
+**Escopo deste pacote:** a autenticação de um usuário a pedido de um sistema externo (Fases 0 e 1) e a proteção das contas e da administração (Fase 2: política e recuperação de senha, MFA, limitação de tentativas, `sentry-backend` protegido, papéis no token). Ações e o serviço `sentry-authorization`, console, SDKs, LDAP e multi-tenant ficam fora.
 
 ## Como ler e validar
 
@@ -30,3 +30,9 @@ Especificação no estilo Spec Driven Development: cada requisito vive no seu pr
 | [F1-09](fase-1/F1-09-logout-e-sessao.md) | Sessão e logout | 1 | F1-03 | Proposto |
 | [F1-10](fase-1/F1-10-registro-de-tentativas.md) | Registro de tentativas de autenticação | 1 | F1-02 | Proposto |
 | [F1-11](fase-1/F1-11-login-direto-sistema-confiavel.md) | Login direto por API para sistemas confiáveis | 1 | F1-01, F1-02, F1-05 | Proposto |
+| [F2-01](fase-2/F2-01-protecao-do-backend.md) | Proteção da API de cadastro (sentry-backend) | 2 | F1-05, F1-08 | Proposto |
+| [F2-02](fase-2/F2-02-politica-e-troca-de-senha.md) | Política de senha e troca obrigatória | 2 | F0-02, F0-03, F1-04 | Proposto |
+| [F2-03](fase-2/F2-03-recuperacao-de-senha.md) | Recuperação de senha por e-mail | 2 | F2-02, F2-05 | Proposto |
+| [F2-04](fase-2/F2-04-mfa-totp.md) | Autenticação em dois fatores (TOTP) | 2 | F1-04, F1-05, F2-02 | Proposto |
+| [F2-05](fase-2/F2-05-limitacao-de-tentativas.md) | Limitação de tentativas e bloqueio temporário | 2 | F1-10 | Proposto |
+| [F2-06](fase-2/F2-06-papeis-no-token.md) | Papéis do usuário no token do sistema | 2 | F1-05, F1-08 | Proposto |

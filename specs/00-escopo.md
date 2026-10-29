@@ -4,6 +4,10 @@
 
 Ao fim da Fase 1, um sistema externo cadastrado no Sentry consegue autenticar um usuário pelo fluxo padrão OAuth 2.1 / OpenID Connect e receber tokens válidos, usando qualquer biblioteca OIDC genérica, sem SDK do Sentry.
 
+## Objetivo da Fase 2
+
+Ao fim da Fase 2, as contas e a administração estão protegidas: a API de cadastro só atende o administrador da plataforma autenticado pelo próprio Sentry, as senhas seguem uma política, podem ser trocadas e recuperadas por e-mail, o usuário pode usar TOTP como segundo fator, tentativas repetidas são freadas e os sistemas podem receber os papéis do usuário no token.
+
 ## Atores
 
 | Ator | Quem é | Onde está no modelo atual |
@@ -27,12 +31,20 @@ Ao fim da Fase 1, um sistema externo cadastrado no Sentry consegue autenticar um
 
 ## Fora de escopo das Fases 0 e 1
 
-- Autorização: papéis e ações no token, serviço `sentry-authorization`.
+- Autorização: papéis e ações no token, serviço `sentry-authorization` (papéis no token entram na Fase 2, F2-06).
 - MFA, recuperação de senha, bloqueio por tentativas (Fase 2).
 - Login via LDAP e login social.
 - Client Credentials (máquina a máquina) e introspection.
 - Console de administração e SDKs.
 - Cadastro de usuários e sistemas por tela: nas Fases 0 e 1, via API do `sentry-backend` ou SQL de bootstrap.
+
+## Fora de escopo da Fase 2
+
+- Ações no token, introspecção (RFC 7662) e o serviço `sentry-authorization`.
+- Login via LDAP e login social; passkeys (WebAuthn).
+- Multi-tenant completo e administradores por organização.
+- Back-channel logout.
+- Console de administração com tela própria e SDKs.
 
 ## Convenções da spec
 

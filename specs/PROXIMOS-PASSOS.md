@@ -1,4 +1,4 @@
-# Próximos passos — Fases 0 e 1
+# Próximos passos — Fases 0 a 2
 
 Situação em 29/10/2026. O `init` já foi integrado ao `main`; a 0.6, a 0.7, a 0.4 e a 0.5 estão na branch `fase-0/argon2id` (PR aberto); a 0.8 e a Fase 1 seguem na `fase-1/clientes-oauth`, criada a partir dela.
 
@@ -62,7 +62,11 @@ Questões em aberto da Fase 1, recomendações aceitas em 29/10:
 
 - Trocar a senha exposta no commit `77462ee` em todo lugar onde é usada (RN-F0-03.2).
 
-## Próximo passo: Fase 1 concluída — pendências com o usuário
+## Próximo passo: revisar a spec da Fase 2
+
+A spec da Fase 2 está em `specs/fase-2/` (F2-01 a F2-06) e no `ROADMAP.md` (tarefas 2.1 a 2.11), com status `Proposto`. A implementação começa depois da revisão: cada arquivo tem **Questões em aberto** com a recomendação.
+
+### Fase 1 concluída — pendências com o usuário
 
 Notas da 1.14:
 

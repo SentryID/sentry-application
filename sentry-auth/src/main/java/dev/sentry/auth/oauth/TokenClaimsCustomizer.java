@@ -1,5 +1,6 @@
 package dev.sentry.auth.oauth;
 
+import dev.sentry.api.domain.access.roleuser.api.RoleUserRepository;
 import dev.sentry.api.domain.system.ExternalSystem;
 import dev.sentry.api.domain.system.api.SystemRepository;
 import dev.sentry.api.domain.user.User;
@@ -19,7 +20,6 @@ import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 /** Claims do access token e do ID token (F1-05), lidos do banco no momento da emissão. */
 @Component
@@ -32,12 +32,14 @@ public class TokenClaimsCustomizer implements OAuth2TokenCustomizer<JwtEncodingC
 
     private final UserRepository userRepository;
     private final SystemRepository systemRepository;
+    private final RoleUserRepository roleUserRepository;
     private final TokenProperties tokenProperties;
 
     public TokenClaimsCustomizer(UserRepository userRepository, SystemRepository systemRepository,
-            TokenProperties tokenProperties) {
+            RoleUserRepository roleUserRepository, TokenProperties tokenProperties) {
         this.userRepository = userRepository;
         this.systemRepository = systemRepository;
+        this.roleUserRepository = roleUserRepository;
         this.tokenProperties = tokenProperties;
     }
 
@@ -49,10 +51,11 @@ public class TokenClaimsCustomizer implements OAuth2TokenCustomizer<JwtEncodingC
      *
      * @param context token em montagem; o {@code sub} já é o {@code uuid} do usuário (RN-F1-05.4)
      * @throws OAuth2AuthenticationException {@code invalid_grant} se o usuário estiver inativo ou excluído, o que
-     *     também barra o refresh (RN-F1-06.6), ou se o refresh passar da vida máxima contada do login (RN-F1-06.5)
+     *     também barra o refresh (RN-F1-06.6); se não tiver papel ativo no sistema, o que vale também para o login por
+     *     sessão SSO iniciado por outro sistema (RN-F1-02.5); ou se o refresh passar da vida máxima contada do login
+     *     (RN-F1-06.5)
      */
     @Override
-    @Transactional(readOnly = true)
     public void customize(JwtEncodingContext context) {
         User user = userRepository.findByUuid(UUID.fromString(context.getPrincipal().getName()));
         if (user == null || !user.getIsActive() || user.getIsDeleted()) {
@@ -63,8 +66,11 @@ public class TokenClaimsCustomizer implements OAuth2TokenCustomizer<JwtEncodingC
             throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_GRANT);
         }
         String clientId = context.getRegisteredClient().getClientId();
+        ExternalSystem system = systemRepository.findByExternalCode(clientId);
+        if (!roleUserRepository.hasActiveRoleInSystem(user.getId(), system.getId())) {
+            throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_GRANT);
+        }
         if (OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) {
-            ExternalSystem system = systemRepository.findByExternalCode(clientId);
             context.getJwsHeader().type("at+jwt");
             context.getClaims().claim("client_id", clientId)
                     .claim("org", system.getOrganization().getUuid().toString());

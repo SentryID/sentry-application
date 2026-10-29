@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="#{logout.title} + ' · ' + #{brand}">Você saiu · Sentry</title>
+    <link rel="stylesheet" th:href="@{/css/sentry.css}">
+</head>
+<body>
+<main class="card">
+    <p class="brand" th:text="#{brand}">Sentry</p>
+    <h1 th:text="#{logout.title}">Você saiu</h1>
+    <p th:text="#{logout.message}">Sua sessão no Sentry foi encerrada.</p>
+</main>
+</body>
+</html>

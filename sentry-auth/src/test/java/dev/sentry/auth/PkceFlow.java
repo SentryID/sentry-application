@@ -6,10 +6,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import com.jayway.jsonpath.JsonPath;
+import jakarta.servlet.http.Cookie;
 import java.net.URI;
 import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -17,29 +18,39 @@ import org.springframework.web.util.UriComponentsBuilder;
 /** Percorre o fluxo Authorization Code + PKCE como um navegador e um sistema externo fariam (F1-03). */
 public final class PkceFlow {
 
+    public static final String SESSION = "SESSION";
+
     private PkceFlow() {
     }
 
     /**
-     * Abre a autorização, faz login na tela do Sentry e volta à autorização.
+     * Abre a autorização, faz login na tela do Sentry e volta à autorização. A sessão SSO (Spring Session) segue no
+     * cookie {@code SESSION}, como num navegador.
      *
-     * @return a sessão SSO criada e o {@code Location} final (o {@code redirect_uri} com {@code code} ou {@code error})
+     * @return o cookie da sessão SSO e o {@code Location} final (o {@code redirect_uri} com {@code code} ou {@code error})
      */
     public static Result loginAndAuthorize(MockMvc mockMvc, String authorizeUrl, String username, String password)
             throws Exception {
-        MockHttpSession session = (MockHttpSession) mockMvc.perform(get(URI.create(authorizeUrl)).accept("text/html"))
-                .andReturn().getRequest().getSession();
-        String resume = mockMvc.perform(post("/login").session(session).with(csrf())
-                        .param("username", username).param("password", password))
-                .andReturn().getResponse().getRedirectedUrl();
-        String location = mockMvc.perform(get(URI.create(resume)).session(session)).andReturn().getResponse().getRedirectedUrl();
-        return new Result(session, location);
+        MvcResult start = mockMvc.perform(get(URI.create(authorizeUrl)).accept("text/html")).andReturn();
+        Cookie session = start.getResponse().getCookie(SESSION);
+        MvcResult login = mockMvc.perform(post("/login").cookie(session).with(csrf())
+                        .param("username", username).param("password", password)).andReturn();
+        session = sessionAfter(login, session);
+        MvcResult resume = mockMvc.perform(get(URI.create(login.getResponse().getRedirectedUrl())).cookie(session))
+                .andReturn();
+        return new Result(sessionAfter(resume, session), resume.getResponse().getRedirectedUrl());
     }
 
     /** Pede a autorização com uma sessão SSO já existente (sem passar pela tela). */
-    public static String authorize(MockMvc mockMvc, MockHttpSession session, String authorizeUrl) throws Exception {
-        return mockMvc.perform(get(URI.create(authorizeUrl)).session(session).accept("text/html"))
+    public static String authorize(MockMvc mockMvc, Cookie session, String authorizeUrl) throws Exception {
+        return mockMvc.perform(get(URI.create(authorizeUrl)).cookie(session).accept("text/html"))
                 .andReturn().getResponse().getRedirectedUrl();
+    }
+
+    /** O cookie de sessão muda no login (proteção contra fixação, RN-F1-09.3). */
+    public static Cookie sessionAfter(MvcResult result, Cookie previous) {
+        Cookie renewed = result.getResponse().getCookie(SESSION);
+        return renewed != null ? renewed : previous;
     }
 
     /** Pede a autorização sem sessão e devolve o {@code Location} da resposta (erros voltam antes da tela de login). */
@@ -81,7 +92,7 @@ public final class PkceFlow {
         return JsonPath.read(result.andReturn().getResponse().getContentAsString(), path);
     }
 
-    public record Result(MockHttpSession session, String location) {
+    public record Result(Cookie session, String location) {
 
         public String code() {
             return param(location, "code");

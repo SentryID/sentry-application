@@ -8,12 +8,20 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+  # RN-F1-09.4: sessão SSO no PostgreSQL; as tabelas vêm da migração V2
+  session:
+    jdbc:
+      initialize-schema: never
 
 server:
   port: 8081
   # RN-F1-10.4: X-Forwarded-For só vale vindo de proxy confiável; o Tomcat aceita, por padrão, só proxies de redes
   # privadas (ajuste em server.tomcat.remoteip.internal-proxies)
   forward-headers-strategy: native
+  # RN-F1-09.2: a sessão SSO expira sem uso (o cookie é configurado em SessionCookieConfiguration)
+  servlet:
+    session:
+      timeout: ${SENTRY_SESSION_IDLE_TIMEOUT:30m}
 
 # só /actuator/health, com liveness e readiness, usado pelo healthcheck do Compose (RN-F0-04.4)
 management:
@@ -29,6 +37,9 @@ management:
 sentry:
   # URL pública do sentry-auth, usada como issuer dos tokens a partir da F1-07 (RN-F0-04.5)
   issuer-url: ${SENTRY_ISSUER_URL:http://localhost:8081}
+  # RN-F1-09.2: vida máxima da sessão SSO, mesmo com uso
+  session:
+    max-age: ${SENTRY_SESSION_MAX_AGE:12h}
 
 # RN-F1-10.7: log estruturado em JSON
 logging:

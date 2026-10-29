@@ -13,7 +13,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import dev.sentry.api.security.password.PasswordService;
 import dev.sentry.auth.OAuthFixtures;
+import dev.sentry.auth.PkceFlow;
 import dev.sentry.auth.TestcontainersConfiguration;
+import jakarta.servlet.http.Cookie;
 import java.net.URI;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,7 +24,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,20 +49,20 @@ class LoginPageTest {
                 "SYS_PAGE");
     }
 
-    private MockHttpSession startAuthorization() throws Exception {
-        return (MockHttpSession) mockMvc.perform(get(URI.create(OAuthFixtures.authorizeUrl("SYS_PAGE", "openid")))
+    private Cookie startAuthorization() throws Exception {
+        return mockMvc.perform(get(URI.create(OAuthFixtures.authorizeUrl("SYS_PAGE", "openid")))
                         .accept("text/html"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/login"))
-                .andReturn().getRequest().getSession();
+                .andReturn().getResponse().getCookie(PkceFlow.SESSION);
     }
 
     // CA-F1-04.1
     @Test
     void loginPageShowsRequestingSystem() throws Exception {
-        MockHttpSession session = startAuthorization();
+        Cookie session = startAuthorization();
 
-        mockMvc.perform(get("/login").session(session))
+        mockMvc.perform(get("/login").cookie(session))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Para continuar em Portal SYS_PAGE")))
                 .andExpect(content().string(not(containsString("Esqueci"))));
@@ -77,13 +78,13 @@ class LoginPageTest {
     // CA-F1-04.3
     @Test
     void wrongPasswordKeepsUsernameAndClearsPassword() throws Exception {
-        MockHttpSession session = startAuthorization();
+        Cookie session = startAuthorization();
 
-        mockMvc.perform(post("/login").session(session).with(csrf())
+        mockMvc.perform(post("/login").cookie(session).with(csrf())
                         .param("username", "page.user").param("password", "errada"))
                 .andExpect(redirectedUrl("/login?error"));
 
-        mockMvc.perform(get("/login").param("error", "").session(session))
+        mockMvc.perform(get("/login").param("error", "").cookie(session))
                 .andExpect(content().string(allOf(
                         containsString("Usuário ou senha inválidos"),
                         containsString("value=\"page.user\""),
@@ -93,9 +94,9 @@ class LoginPageTest {
     // CA-F1-03.5 (parte): login certo volta ao fluxo de autorização
     @Test
     void successfulLoginResumesAuthorization() throws Exception {
-        MockHttpSession session = startAuthorization();
+        Cookie session = startAuthorization();
 
-        mockMvc.perform(post("/login").session(session).with(csrf())
+        mockMvc.perform(post("/login").cookie(session).with(csrf())
                         .param("username", "Page.User").param("password", OAuthFixtures.PASSWORD))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(header().string("Location", containsString("/oauth2/authorize")));

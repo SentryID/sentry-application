@@ -40,6 +40,11 @@ public class LoginPageController {
         return "login";
     }
 
+    @GetMapping(SsoLogout.LOGGED_OUT_PATH)
+    String loggedOut() {
+        return "logout";
+    }
+
     /**
      * {@code client_id} do pedido de autorização que levou à tela de login, guardado na sessão pelo Spring Security.
      *

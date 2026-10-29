@@ -1,5 +1,6 @@
 package dev.sentry.auth;
 
+import java.util.List;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -53,6 +54,36 @@ public final class OAuthFixtures {
         jdbc.update("INSERT INTO system_redirect_uris (id_system, uri, uri_type) VALUES (?, ?, 'LOGIN'), (?, ?, 'LOGOUT')",
                 idSystem, REDIRECT_URI, idSystem, LOGOUT_URI);
         return idSystem;
+    }
+
+    /** Dá ao usuário um papel ativo em mais um sistema. */
+    public static void grantRole(JdbcTemplate jdbc, String username, String code) {
+        jdbc.update("""
+                INSERT INTO roles (id_system, id_organization, system_role, uuid, is_active, is_deleted)
+                SELECT id_system, id_organization, ?, gen_random_uuid(), TRUE, FALSE FROM systems WHERE external_code = ?""",
+                code + ".USER." + username, code);
+        jdbc.update("""
+                INSERT INTO role_users (id_role, id_user, is_active, is_deleted)
+                SELECT r.id_role, u.id_user, TRUE, FALSE FROM roles r, users u
+                WHERE r.system_role = ? AND u.username = ?""", code + ".USER." + username, username);
+    }
+
+    /** Remove, para testes sem transação, tudo o que os fixtures criaram para estes sistemas e usuários. */
+    public static void cleanUp(JdbcTemplate jdbc, List<String> codes, List<String> usernames) {
+        for (String code : codes) {
+            jdbc.update("DELETE FROM oauth2_authorization WHERE registered_client_id = ?", code);
+            jdbc.update("DELETE FROM access_logs WHERE id_system IN (SELECT id_system FROM systems WHERE external_code = ?)", code);
+            jdbc.update("DELETE FROM role_users WHERE id_role IN (SELECT r.id_role FROM roles r JOIN systems s ON s.id_system = r.id_system WHERE s.external_code = ?)", code);
+            jdbc.update("DELETE FROM roles WHERE id_system IN (SELECT id_system FROM systems WHERE external_code = ?)", code);
+            jdbc.update("DELETE FROM system_redirect_uris WHERE id_system IN (SELECT id_system FROM systems WHERE external_code = ?)", code);
+            jdbc.update("DELETE FROM systems WHERE external_code = ?", code);
+            jdbc.update("DELETE FROM organizations WHERE external_code = ?", "ORG_" + code);
+        }
+        for (String username : usernames) {
+            jdbc.update("DELETE FROM access_logs WHERE id_user IN (SELECT id_user FROM users WHERE username = ?)", username);
+            jdbc.update("DELETE FROM spring_session WHERE principal_name IN (SELECT uuid::text FROM users WHERE username = ?)", username);
+            jdbc.update("DELETE FROM users WHERE username = ?", username);
+        }
     }
 
     /**

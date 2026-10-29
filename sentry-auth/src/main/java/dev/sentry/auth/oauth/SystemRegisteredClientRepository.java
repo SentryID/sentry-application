@@ -15,7 +15,6 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
 import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Clientes OAuth lidos da tabela {@code systems} (F1-01), no lugar da {@code oauth2_registered_client} do Spring
@@ -53,7 +52,6 @@ public class SystemRegisteredClientRepository implements RegisteredClientReposit
      * @return o cliente, ou {@code null} se o sistema não puder autenticar
      */
     @Override
-    @Transactional(readOnly = true)
     public RegisteredClient findByClientId(String clientId) {
         ExternalSystem system = systemRepository.findByExternalCode(clientId);
         if (system == null || !system.getIsActive() || system.getIsDeleted()

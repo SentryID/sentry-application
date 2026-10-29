@@ -3,6 +3,8 @@ package dev.sentry.auth.oauth;
 import dev.sentry.api.domain.accesslog.AccessLog.Channel;
 import dev.sentry.auth.provider.LoginAttempt;
 import dev.sentry.auth.web.LoginPageController;
+import dev.sentry.auth.web.PromptLoginFilter;
+import dev.sentry.auth.web.SsoLogout;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -37,6 +39,7 @@ import org.springframework.security.oauth2.server.authorization.token.OAuth2Toke
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.context.SecurityContextHolderFilter;
 import org.springframework.security.web.header.HeaderWriterFilter;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -57,8 +60,8 @@ public class AuthorizationServerConfiguration {
 
     @Bean
     @Order(1)
-    SecurityFilterChain authorizationServerFilterChain(HttpSecurity http, UserInfoMapper userInfoMapper)
-            throws Exception {
+    SecurityFilterChain authorizationServerFilterChain(HttpSecurity http, UserInfoMapper userInfoMapper,
+            SsoLogout ssoLogout) throws Exception {
         var authorizationServer = new OAuth2AuthorizationServerConfigurer();
         http.securityMatcher(authorizationServer.getEndpointsMatcher())
                 .with(authorizationServer, server -> server
@@ -74,12 +77,16 @@ public class AuthorizationServerConfiguration {
                                                         methods -> methods.retainAll(CLIENT_AUTH_METHODS))))
                                 .userInfoEndpoint(userInfo -> userInfo
                                         .userInfoMapper(userInfoMapper)
-                                        .errorResponseHandler(AuthorizationServerConfiguration::bearerError))))
+                                        .errorResponseHandler(AuthorizationServerConfiguration::bearerError))
+                                .logoutEndpoint(logout -> logout
+                                        .logoutResponseHandler(ssoLogout::onSuccess)
+                                        .errorResponseHandler(ssoLogout::onError))))
                 .authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
                 .oauth2ResourceServer(resourceServer -> resourceServer.jwt(Customizer.withDefaults()))
                 .exceptionHandling(exceptions -> exceptions.defaultAuthenticationEntryPointFor(
                         new LoginUrlAuthenticationEntryPoint("/login"), new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
-                .addFilterBefore(new CacheablePublicMetadataFilter(), HeaderWriterFilter.class);
+                .addFilterBefore(new CacheablePublicMetadataFilter(), HeaderWriterFilter.class)
+                .addFilterAfter(new PromptLoginFilter(), SecurityContextHolderFilter.class);
         return http.build();
     }
 
@@ -87,7 +94,7 @@ public class AuthorizationServerConfiguration {
     @Order(2)
     SecurityFilterChain applicationFilterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/actuator/health/**", "/error", "/css/**").permitAll()
+                        .requestMatchers("/actuator/health/**", "/error", "/css/**", SsoLogout.LOGGED_OUT_PATH).permitAll()
                         .anyRequest().authenticated())
                 // F1-04: tela própria; os detalhes levam o sistema do fluxo, o IP e o User-Agent ao provedor
                 .formLogin(form -> form.loginPage("/login").permitAll()

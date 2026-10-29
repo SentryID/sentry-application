@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import dev.sentry.auth.OAuthFixtures;
 import dev.sentry.auth.TestcontainersConfiguration;
+import java.net.URI;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -77,7 +78,7 @@ class AuthorizationServerMetadataTest {
         jdbcTemplate.update("""
                 INSERT INTO system_redirect_uris (id_system, uri, uri_type)
                 SELECT id_system, ?, 'LOGIN' FROM systems WHERE external_code = 'SYS_OFF'""", OAuthFixtures.REDIRECT_URI);
-        mockMvc.perform(get(OAuthFixtures.authorizeUrl("SYS_OFF", "openid")).accept("text/html"))
+        mockMvc.perform(get(URI.create(OAuthFixtures.authorizeUrl("SYS_OFF", "openid"))).accept("text/html"))
                 .andExpect(status().isBadRequest())
                 .andExpect(status().reason(containsString("client_id")))
                 .andExpect(header().doesNotExist("Location"));

@@ -18,6 +18,7 @@ public final class OAuthFixtures {
 
     /**
      * URL de autorização com os parâmetros na query string, como o navegador envia (o Authorization Server os lê de lá).
+     * Sai codificada; use com {@code get(URI.create(url))}, que não codifica de novo.
      *
      * @param extra pares nome/valor adicionais, como {@code "nonce", "abc"}
      */

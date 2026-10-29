@@ -14,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import dev.sentry.api.security.password.PasswordService;
 import dev.sentry.auth.OAuthFixtures;
 import dev.sentry.auth.TestcontainersConfiguration;
+import java.net.URI;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,7 +49,7 @@ class LoginPageTest {
     }
 
     private MockHttpSession startAuthorization() throws Exception {
-        return (MockHttpSession) mockMvc.perform(get(OAuthFixtures.authorizeUrl("SYS_PAGE", "openid"))
+        return (MockHttpSession) mockMvc.perform(get(URI.create(OAuthFixtures.authorizeUrl("SYS_PAGE", "openid")))
                         .accept("text/html"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/login"))
@@ -112,7 +113,7 @@ class LoginPageTest {
     // RN-F1-03.3: client_id desconhecido mostra a página de erro do Sentry, sem redirecionar
     @Test
     void unknownClientShowsErrorPage() throws Exception {
-        mockMvc.perform(get(OAuthFixtures.authorizeUrl("NAO_EXISTE", "openid")).accept("text/html"))
+        mockMvc.perform(get(URI.create(OAuthFixtures.authorizeUrl("NAO_EXISTE", "openid"))).accept("text/html"))
                 .andExpect(status().isBadRequest())
                 .andExpect(status().reason(containsString("client_id")))
                 .andExpect(header().doesNotExist("Location"));

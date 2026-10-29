@@ -14,6 +14,8 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.FactorGrantedAuthority;
+import org.springframework.security.web.authentication.WebAuthenticationDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -66,7 +68,13 @@ public class DatabaseAuthenticationProvider implements AuthenticationProvider {
         if (outcome.result() != AttemptResult.SUCCESS) {
             throw new BadCredentialsException(INVALID_CREDENTIALS_MESSAGE);
         }
-        return UsernamePasswordAuthenticationToken.authenticated(outcome.user().getUuid().toString(), null, List.of());
+        // o fator senha leva o instante do login, que vira o auth_time do ID token (RN-F1-05.3)
+        var authenticated = UsernamePasswordAuthenticationToken.authenticated(outcome.user().getUuid().toString(), null,
+                List.of(FactorGrantedAuthority.fromAuthority(FactorGrantedAuthority.PASSWORD_AUTHORITY)));
+        // a autenticação é gravada pelo Authorization Server em JSON, que só aceita tipos conhecidos; sem isto o
+        // ProviderManager copiaria o LoginAttempt para cá
+        authenticated.setDetails(new WebAuthenticationDetails(attempt.ipAddress(), null));
+        return authenticated;
     }
 
     @Override

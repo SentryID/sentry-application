@@ -2,9 +2,11 @@ package dev.sentry.api.domain.system.api;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
+import dev.sentry.api.domain.system.ExternalSystem.ClientType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 /** Contratos REST do sistema: os records de request/response dos endpoints. */
@@ -46,8 +48,16 @@ public interface SystemRest {
             String description,
             @Schema(description = "URL do sistema", example = "https://portal.sentry.dev")
             String url,
-            @Schema(description = "Escopos suportados pelo sistema", example = "read write")
+            @Schema(description = "Escopos permitidos, separados por espaço", example = "openid profile email")
             String scopes,
+            @Schema(description = "Tipo de cliente OAuth", example = "CONFIDENTIAL")
+            ClientType clientType,
+            @Schema(description = "URIs de redirecionamento após o login", example = "[\"https://portal.sentry.dev/callback\"]")
+            List<String> redirectUris,
+            @Schema(description = "URIs de redirecionamento após o logout", example = "[\"https://portal.sentry.dev\"]")
+            List<String> postLogoutRedirectUris,
+            @Schema(description = "Indica se o sistema pode usar o login direto", example = "false")
+            Boolean isTrusted,
             @Schema(description = "Identificador público do sistema", example = "3f2504e0-4f89-11d3-9a0c-0305e82c3301")
             UUID uuid,
             @Schema(description = "Indica se o sistema está ativo", example = "true")
@@ -68,14 +78,22 @@ public interface SystemRest {
     record SaveRequest(
             @Schema(description = "Identificador interno da organização dona do sistema", example = "1", requiredMode = RequiredMode.REQUIRED)
             @NotNull Long idOrganization,
-            @Schema(description = "Código externo do sistema", example = "SYS001")
-            String externalCode,
+            @Schema(description = "Código externo do sistema, usado como client_id; não pode ser alterado depois", example = "SYS001", requiredMode = RequiredMode.REQUIRED)
+            @NotBlank String externalCode,
             @Schema(description = "Descrição do sistema", example = "Portal do Cliente", requiredMode = RequiredMode.REQUIRED)
             @NotBlank String description,
             @Schema(description = "URL do sistema", example = "https://portal.sentry.dev")
             String url,
-            @Schema(description = "Escopos suportados pelo sistema", example = "read write")
+            @Schema(description = "Escopos permitidos, separados por espaço: openid, profile, email, offline_access", example = "openid profile email")
             String scopes,
+            @Schema(description = "Tipo de cliente OAuth: PUBLIC (SPA/mobile) ou CONFIDENTIAL (com backend e segredo)", example = "CONFIDENTIAL", requiredMode = RequiredMode.REQUIRED)
+            @NotNull ClientType clientType,
+            @Schema(description = "URIs de redirecionamento após o login (https; http só para localhost e 127.0.0.1)", example = "[\"https://portal.sentry.dev/callback\"]")
+            List<String> redirectUris,
+            @Schema(description = "URIs de redirecionamento após o logout", example = "[\"https://portal.sentry.dev\"]")
+            List<String> postLogoutRedirectUris,
+            @Schema(description = "Indica se o sistema pode usar o login direto", example = "false", requiredMode = RequiredMode.REQUIRED)
+            @NotNull Boolean isTrusted,
             @Schema(description = "Indica se o sistema está ativo", example = "true", requiredMode = RequiredMode.REQUIRED)
             @NotNull Boolean isActive) {
     }
@@ -84,15 +102,35 @@ public interface SystemRest {
     record UpdateRequest(
             @Schema(description = "Identificador interno da organização dona do sistema", example = "1", requiredMode = RequiredMode.REQUIRED)
             @NotNull Long idOrganization,
-            @Schema(description = "Código externo do sistema", example = "SYS001")
-            String externalCode,
             @Schema(description = "Descrição do sistema", example = "Portal do Cliente", requiredMode = RequiredMode.REQUIRED)
             @NotBlank String description,
             @Schema(description = "URL do sistema", example = "https://portal.sentry.dev")
             String url,
-            @Schema(description = "Escopos suportados pelo sistema", example = "read write")
+            @Schema(description = "Escopos permitidos, separados por espaço: openid, profile, email, offline_access", example = "openid profile email")
             String scopes,
+            @Schema(description = "Tipo de cliente OAuth: PUBLIC (SPA/mobile) ou CONFIDENTIAL (com backend e segredo)", example = "CONFIDENTIAL")
+            ClientType clientType,
+            @Schema(description = "URIs de redirecionamento após o login (https; http só para localhost e 127.0.0.1)", example = "[\"https://portal.sentry.dev/callback\"]")
+            List<String> redirectUris,
+            @Schema(description = "URIs de redirecionamento após o logout", example = "[\"https://portal.sentry.dev\"]")
+            List<String> postLogoutRedirectUris,
+            @Schema(description = "Indica se o sistema pode usar o login direto", example = "false")
+            Boolean isTrusted,
             @Schema(description = "Indica se o sistema está ativo", example = "true", requiredMode = RequiredMode.REQUIRED)
             @NotNull Boolean isActive) {
+    }
+
+    @Schema(description = "Credenciais do cliente OAuth; o segredo só aparece nesta resposta")
+    record ClientCredentials(
+            @Schema(description = "client_id do sistema (o código externo)", example = "SYS001")
+            String clientId,
+            @Schema(description = "Segredo em claro, só para sistemas CONFIDENTIAL; guarde agora, ele não é mostrado de novo")
+            String clientSecret) {
+
+        // o segredo não pode aparecer em logs (RN-F0-02.6)
+        @Override
+        public String toString() {
+            return "ClientCredentials[clientId=" + clientId + ", clientSecret=***]";
+        }
     }
 }

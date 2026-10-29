@@ -15,6 +15,7 @@ Situação em 29/10/2026. O `init` já foi integrado ao `main`; a 0.6, a 0.7, a 
 | 0.5 | `.github/workflows/ci.yml` em todo push e pull request: job `build` (Temurin 27, `./mvnw -B verify` com Testcontainers, cobertura de linhas por módulo no resumo do job, relatórios JaCoCo e surefire como artifact) e job `gitleaks` (CLI `zricethezav/gitleaks:v8.30.1` no histórico inteiro); JaCoCo no `pom.xml` raiz; `.github/dependabot.yml` semanal para maven, github-actions e docker. Gitleaks local sem achados no histórico; CA-F0-05.2 verificado com uma chave PEM falsa. Cobertura de linhas em 29/10: `sentry-auth` 92,6%, `sentry-backend` 31,0%, `sentry-api` 14,4% (só os testes do próprio módulo contam) | branch `fase-0/argon2id` |
 | 0.8 | Job `image` no `ci.yml`: em push no `main`, depois de `build` e `gitleaks` verdes, publica `ghcr.io/<owner em minúsculas>/sentry-auth:<sha>` com o `GITHUB_TOKEN` (`packages: write`). A proteção do `main` fica com o usuário | branch `fase-1/clientes-oauth` |
 | 1.1 | Migração `V2__oauth_clients_and_sessions.sql`: `systems` ganha `client_type`, `client_secret_hash`, `is_trusted` e `external_code NOT NULL` (é o `client_id`); `system_redirect_uris` (`LOGIN`/`LOGOUT`); `access_logs` ganha `attempted_username`, `channel` e `user_agent`; `oauth2_authorization`, `oauth2_authorization_consent` (Spring Authorization Server 7.1) e `spring_session*` (Spring Session JDBC 4.1), adaptados ao PostgreSQL. Entidades `ExternalSystem` e `AccessLog` ajustadas para o `ddl-auto: validate` | branch `fase-1/clientes-oauth` |
+| 1.2 | `/systems` no `sentry-backend` com os dados de cliente: `clientType`, `redirectUris`, `postLogoutRedirectUris`, `isTrusted`; criação de `CONFIDENTIAL` devolve o `client_secret` uma vez (hash Argon2id no banco); `POST /systems/{id}/client-secret` rotaciona; URIs só `https` (ou `http` em `localhost`/`127.0.0.1`), sem fragmento; escopos só `openid`, `profile`, `email`, `offline_access`; `externalCode` obrigatório e imutável. Testes CA-F1-01.1, .2 e .4 | branch `fase-1/clientes-oauth` |
 
 Achados que a spec não previa, já tratados:
 
@@ -49,7 +50,14 @@ Questões em aberto da Fase 1, recomendações aceitas em 29/10:
 
 - Trocar a senha exposta no commit `77462ee` em todo lugar onde é usada (RN-F0-03.2).
 
-## Próximo passo: 1.2 — CRUD de cliente OAuth (F1-01)
+## Próximo passo: 1.3 — Validação de credenciais (F1-02)
+
+Notas da 1.2:
+
+- O `sentry-backend` passou a responder erros em Problem Details (RFC 9457); a mensagem em português vem no campo `detail`. Vale para todos os endpoints.
+- `externalCode` saiu do `UpdateRequest`: é o `client_id` e não muda depois da criação.
+- **Pendente:** só o `SENTRY.ADMIN` pode marcar `isTrusted` (decisão de F1-11), mas o `sentry-backend` ainda não tem autenticação; a regra entra junto com ela.
+- O CA-F1-01.3 (sistema desativado recebe `invalid_client`) depende do Authorization Server e fica para a 1.5.
 
 Notas da 1.1:
 

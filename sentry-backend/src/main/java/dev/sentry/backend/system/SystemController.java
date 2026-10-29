@@ -25,13 +25,18 @@ public class SystemController implements SystemControllerSwagger {
     }
 
     @Override
-    public void save(SystemRest.SaveRequest request) {
-        systemService.save(request);
+    public SystemRest.ClientCredentials save(SystemRest.SaveRequest request) {
+        return systemService.save(request);
     }
 
     @Override
     public void update(Long id, SystemRest.UpdateRequest request) {
         systemService.update(id, request);
+    }
+
+    @Override
+    public SystemRest.ClientCredentials rotateClientSecret(Long id) {
+        return systemService.rotateClientSecret(id);
     }
 
     @Override

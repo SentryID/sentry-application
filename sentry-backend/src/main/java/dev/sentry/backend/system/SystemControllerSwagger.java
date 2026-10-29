@@ -35,25 +35,36 @@ public interface SystemControllerSwagger {
     @GetMapping("/{id}")
     SystemRest.Response findById(@PathVariable Long id);
 
-    @Operation(summary = "Cria um novo sistema")
+    @Operation(summary = "Cria um novo sistema",
+            description = "Registra o sistema como cliente OAuth. Para CONFIDENTIAL, a resposta traz o segredo, que não é mostrado de novo")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Sistema criado com sucesso"),
-            @ApiResponse(responseCode = "400", description = "Dados inválidos"),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos, escopo não permitido ou URI de redirecionamento inválida"),
             @ApiResponse(responseCode = "409", description = "Já existe um sistema com esse código externo")
     })
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    void save(@RequestBody @Valid SystemRest.SaveRequest request);
+    SystemRest.ClientCredentials save(@RequestBody @Valid SystemRest.SaveRequest request);
 
     @Operation(summary = "Atualiza um sistema existente")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Sistema atualizado com sucesso"),
-            @ApiResponse(responseCode = "404", description = "Sistema não encontrado"),
-            @ApiResponse(responseCode = "409", description = "Já existe um sistema com esse código externo")
+            @ApiResponse(responseCode = "400", description = "Dados inválidos, escopo não permitido ou URI de redirecionamento inválida"),
+            @ApiResponse(responseCode = "404", description = "Sistema não encontrado")
     })
     @PutMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void update(@PathVariable Long id, @RequestBody @Valid SystemRest.UpdateRequest request);
+
+    @Operation(summary = "Gera um novo segredo do cliente",
+            description = "O segredo anterior deixa de valer na hora. O novo só aparece nesta resposta")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Segredo gerado"),
+            @ApiResponse(responseCode = "400", description = "Sistema do tipo PUBLIC não tem segredo"),
+            @ApiResponse(responseCode = "404", description = "Sistema não encontrado")
+    })
+    @PostMapping("/{id}/client-secret")
+    SystemRest.ClientCredentials rotateClientSecret(@PathVariable Long id);
 
     @Operation(summary = "Remove um sistema", description = "Exclusão lógica: marca o sistema como excluído")
     @ApiResponses({

@@ -27,6 +27,7 @@ Situação em 29/10/2026. O `init` já foi integrado ao `main`; a 0.6, a 0.7, a 
 | 1.11 | Sessão SSO no PostgreSQL (Spring Session JDBC), cookie `HttpOnly`/`SameSite=Lax`/`Secure` em HTTPS, renovada no login, 30 min sem uso e 12 h no máximo (`SENTRY_SESSION_IDLE_TIMEOUT`, `SENTRY_SESSION_MAX_AGE`); `prompt=login` encerra a sessão e pede a senha; `/connect/logout` revoga todas as autorizações da sessão (`sid`), volta à `post_logout_redirect_uri` cadastrada com o `state` e, com URI não cadastrada, encerra a sessão e mostra a página do Sentry; o papel no sistema passou a ser exigido também na emissão do token (SSO e refresh). Testes CA-F1-09.1 a .5 | branch `fase-1/clientes-oauth` |
 | 1.12 | `POST /api/v1/auth/login`: o sistema se autentica por HTTP Basic (só `CONFIDENTIAL`; público ou segredo errado → `401 invalid_client`; não confiável → `403 unauthorized_client`); usuário validado pelos mesmos provedores da tela, com canal `DIRECT` no `access_logs`; mesmos tokens do fluxo PKCE (escopo padrão `openid profile`, refresh só com `offline_access`), gravados como autorização para o refresh funcionar no `/oauth2/token`; cadeia sem sessão (não cria SSO) e sem CSRF; só HTTPS fora de localhost; documentado no OpenAPI (`/v3/api-docs`, `/swagger-ui.html`). Testes CA-F1-11.1 a .6 e CA-F1-10.4 (nenhum log com senha ou token) | branch `fase-1/clientes-oauth` |
 | 1.13 | `EndToEndOidcTest`: servidor numa porta real e um cliente OIDC genérico (Spring Security OAuth2 Client) configurado só com issuer e `client_id` faz descoberta, PKCE, login pela tela, troca do código, valida o ID token pelo JWKS, chama o `/userinfo` e faz logout; um sistema confidencial renova o token e um confiável faz login direto. `examples/spa`: SPA com `oidc-client-ts` para rodar à mão, com o `SYS001` do seed `dev` como cliente público em `http://127.0.0.1:3000/`. CORS para os endpoints que o SPA chama, liberado só para origens de URIs cadastradas de sistemas ativos. Teste CA-F1-03.6 e critério de saída da Fase 1 | branch `fase-1/clientes-oauth` |
+| 1.14 | `docs/integracao.md`: cadastro do sistema no `sentry-backend`, login por PKCE (com exemplos para SPA e Spring Boot), login direto, tokens e validação por APIs, refresh, revogação, userinfo, logout e variáveis de configuração; link no `README.md` | branch `fase-1/clientes-oauth` |
 
 Achados que a spec não previa, já tratados:
 
@@ -61,7 +62,20 @@ Questões em aberto da Fase 1, recomendações aceitas em 29/10:
 
 - Trocar a senha exposta no commit `77462ee` em todo lugar onde é usada (RN-F0-03.2).
 
-## Próximo passo: 1.14 — Documentação de integração
+## Próximo passo: Fase 1 concluída — pendências com o usuário
+
+Notas da 1.14:
+
+- Validado também à mão: `SPRING_PROFILES_ACTIVE=dev docker compose up --build`, usuário criado pela API do `sentry-backend` e o `examples/spa` num navegador real: login pela tela do Sentry, perfil lido pelo `/userinfo` (CORS), logout e nova senha pedida depois do logout.
+
+Pendências que ficam com o usuário:
+
+- Push das branches `fase-0/argon2id` e `fase-1/clientes-oauth`, PR da Fase 1 e merge no `main` (0.9), confirmando a imagem no GHCR (CA-F0-05.3).
+- Proteger o `main` (RN-F0-05.4, CA-F0-05.1).
+- Trocar a senha exposta no commit `77462ee` (RN-F0-03.2).
+- Revisar as decisões novas registradas nas notas da 1.6 (`127.0.0.1` em vez de `localhost`), da 1.7 (cliente público sem refresh token) e da 1.11 (papel exigido na emissão do token).
+- Autenticação no `sentry-backend`: hoje a API de cadastro é aberta, e a regra "só o `SENTRY.ADMIN` marca `isTrusted`" depende dela (fora do escopo da Fase 1).
+- Produção: montar `SENTRY_JWT_SIGNING_KEY`, deixar `SENTRY_JWT_GENERATE_IF_MISSING=false` e configurar `server.tomcat.remoteip.internal-proxies`.
 
 Notas da 1.13:
 

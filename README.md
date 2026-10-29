@@ -6,6 +6,8 @@ Aplicação open source de autenticação e autorização. Módulos:
 - `sentry-backend` (porta 8080): cadastro de organizações, sistemas, usuários e permissões.
 - `sentry-api`: código compartilhado (entidades, serviços, migrações Flyway).
 
+Para integrar um sistema (cadastro, login por PKCE ou direto, tokens e logout), veja [docs/integracao.md](docs/integracao.md).
+
 ## Ambiente local com Docker
 
 Só é preciso ter o Docker.
@@ -21,6 +23,8 @@ Os dois serviços ficam prontos quando `/actuator/health` responde `UP`:
 
 - http://localhost:8081/actuator/health
 - http://localhost:8080/actuator/health
+
+Os tokens são assinados com uma chave temporária, gerada a cada subida (`SENTRY_JWT_GENERATE_IF_MISSING=true` no `.env.example`). Em produção, configure `SENTRY_JWT_SIGNING_KEY` e deixe essa variável em `false`.
 
 Na primeira subida, com o banco vazio, o `sentry-auth` cria o administrador. Se `SENTRY_ADMIN_PASSWORD` estiver vazia no `.env`, a senha é gerada e aparece **uma única vez** no log:
 

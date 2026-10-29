@@ -20,6 +20,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
 import org.springframework.security.oauth2.core.OAuth2Token;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
@@ -54,7 +57,8 @@ public class AuthorizationServerConfiguration {
 
     @Bean
     @Order(1)
-    SecurityFilterChain authorizationServerFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain authorizationServerFilterChain(HttpSecurity http, UserInfoMapper userInfoMapper)
+            throws Exception {
         var authorizationServer = new OAuth2AuthorizationServerConfigurer();
         http.securityMatcher(authorizationServer.getEndpointsMatcher())
                 .with(authorizationServer, server -> server
@@ -62,10 +66,15 @@ public class AuthorizationServerConfiguration {
                                 builder -> builder
                                         .grantTypes(types -> types.retainAll(GRANT_TYPES))
                                         .tokenEndpointAuthenticationMethods(methods -> methods.retainAll(CLIENT_AUTH_METHODS))))
-                        .oidc(oidc -> oidc.providerConfigurationEndpoint(provider -> provider.providerConfigurationCustomizer(
-                                builder -> builder
-                                        .grantTypes(types -> types.retainAll(GRANT_TYPES))
-                                        .tokenEndpointAuthenticationMethods(methods -> methods.retainAll(CLIENT_AUTH_METHODS))))))
+                        .oidc(oidc -> oidc
+                                .providerConfigurationEndpoint(provider -> provider.providerConfigurationCustomizer(
+                                        builder -> builder
+                                                .grantTypes(types -> types.retainAll(GRANT_TYPES))
+                                                .tokenEndpointAuthenticationMethods(
+                                                        methods -> methods.retainAll(CLIENT_AUTH_METHODS))))
+                                .userInfoEndpoint(userInfo -> userInfo
+                                        .userInfoMapper(userInfoMapper)
+                                        .errorResponseHandler(AuthorizationServerConfiguration::bearerError))))
                 .authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
                 .oauth2ResourceServer(resourceServer -> resourceServer.jwt(Customizer.withDefaults()))
                 .exceptionHandling(exceptions -> exceptions.defaultAuthenticationEntryPointFor(
@@ -117,6 +126,18 @@ public class AuthorizationServerConfiguration {
         OAuth2TokenGenerator<OAuth2RefreshToken> offlineAccessOnly = context ->
                 context.getAuthorizedScopes().contains(OFFLINE_ACCESS) ? refreshTokenGenerator.generate(context) : null;
         return new DelegatingOAuth2TokenGenerator(jwtGenerator, offlineAccessOnly);
+    }
+
+    // RN-F1-08.4: erros do /userinfo com o status e o WWW-Authenticate do RFC 6750
+    private static void bearerError(HttpServletRequest request, HttpServletResponse response,
+            AuthenticationException exception) {
+        String code = ((OAuth2AuthenticationException) exception).getError().getErrorCode();
+        response.setStatus(switch (code) {
+            case OAuth2ErrorCodes.INVALID_TOKEN -> HttpServletResponse.SC_UNAUTHORIZED;
+            case OAuth2ErrorCodes.INSUFFICIENT_SCOPE -> HttpServletResponse.SC_FORBIDDEN;
+            default -> HttpServletResponse.SC_BAD_REQUEST;
+        });
+        response.setHeader("WWW-Authenticate", "Bearer error=\"" + code + "\"");
     }
 
     /**

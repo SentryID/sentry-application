@@ -23,6 +23,7 @@ Situação em 29/10/2026. O `init` já foi integrado ao `main`; a 0.6, a 0.7, a 
 | 1.7 | Fluxo `/oauth2/authorize` + `/oauth2/token` com PKCE S256 obrigatório coberto ponta a ponta (MockMvc): código e `state` de volta ao `redirect_uri`, troca por access token e ID token, refresh token para cliente confidencial com `offline_access`, `client_secret_basic`/`client_secret_post`, erros (`invalid_request` sem PKCE ou com `plain`, `invalid_scope`) de volta ao `redirect_uri` com o `state`, `redirect_uri` não cadastrado sem redirecionamento, verificador errado e código reusado com `invalid_grant` (e o refresh token da primeira troca revogado), SSO sem nova senha. O login registra o fator senha, que vira o `auth_time`. Testes CA-F1-03.1 a .5 | branch `fase-1/clientes-oauth` |
 | 1.8 | `TokenClaimsCustomizer`: access token RS256 com `typ=at+jwt`, `iss`, `sub` (uuid do usuário), `aud` = `client_id`, `client_id`, `exp`, `iat`, `jti`, `scope` e `org` (uuid da organização), sem e-mail nem papéis; ID token com `nonce`, `sid`, `auth_time`, `name`/`preferred_username` (escopo `profile`) e `email` (escopo `email`) lidos do banco; vida de 15 min nos dois (`sentry.token.*`); usuário inativo não recebe token (`invalid_grant`); emissão registrada no log JSON sem o token. Testes CA-F1-05.1 a .5 e CA-F1-07.2 (assinatura conferida com o JWKS por uma biblioteca JWT comum) | branch `fase-1/clientes-oauth` |
 | 1.9 | Refresh token opaco só com `offline_access` concedido; gravado como SHA-256 (`HashedRefreshTokenAuthorizationService`); rotação a cada uso; reapresentar um token já rotacionado revoga a autorização inteira (V4: `oauth2_rotated_refresh_tokens`); vida de 30 dias sem uso e máxima de 90 dias contada do login; usuário inativo recebe `invalid_grant` e sistema inativo `invalid_client`; preso ao `client_id`; `/oauth2/revoke` (RFC 7009). Testes CA-F1-06.1 a .5 | branch `fase-1/clientes-oauth` |
+| 1.10 | `GET /userinfo` com access token Bearer: `UserInfoMapper` lê o usuário do banco na hora (`sub`; `name`/`preferred_username` com `profile`; `email` com `email`); token sem `openid` recebe `403` e usuário inativo `401`, os dois com `WWW-Authenticate: Bearer error=...`; o decodificador de access tokens aceita só `typ=at+jwt` (RFC 9068). Testes CA-F1-08.1 a .3 e RN-F1-08.4 | branch `fase-1/clientes-oauth` |
 
 Achados que a spec não previa, já tratados:
 
@@ -57,7 +58,7 @@ Questões em aberto da Fase 1, recomendações aceitas em 29/10:
 
 - Trocar a senha exposta no commit `77462ee` em todo lugar onde é usada (RN-F0-03.2).
 
-## Próximo passo: 1.10 — UserInfo (F1-08)
+## Próximo passo: 1.11 — Sessão SSO e logout (F1-09)
 
 Notas da 1.7:
 

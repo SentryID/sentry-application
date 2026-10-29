@@ -59,7 +59,7 @@ class SigningKeyConfigurationTest {
         JWKSource<SecurityContext> jwks = configuration.jwkSource(current, properties);
 
         String oldToken = new NimbusJwtEncoder(new ImmutableJWKSet<>(new JWKSet(previous)))
-                .encode(JwtEncoderParameters.from(JwsHeader.with(SignatureAlgorithm.RS256).keyId(previous.getKeyID()).build(),
+                .encode(JwtEncoderParameters.from(JwsHeader.with(SignatureAlgorithm.RS256).keyId(previous.getKeyID()).type("at+jwt").build(),
                         JwtClaimsSet.builder().subject("u").expiresAt(Instant.now().plusSeconds(60)).build()))
                 .getTokenValue();
 

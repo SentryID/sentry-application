@@ -29,10 +29,13 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtTimestampValidator;
+import org.springframework.security.oauth2.jwt.JwtTypeValidator;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
-import org.springframework.security.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 
 /**
  * Chaves RS256 dos tokens (F1-07). A chave atual assina; a anterior, quando configurada, continua no JWKS para que
@@ -89,9 +92,13 @@ public class SigningKeyConfiguration {
         return new NimbusJwtEncoder(new ImmutableJWKSet<>(new JWKSet(currentSigningKey)));
     }
 
+    // valida access tokens (no /userinfo): RS256 e typ at+jwt (RFC 9068), com qualquer chave do JWKS
     @Bean
     JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
-        return OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);
+        NimbusJwtDecoder decoder = NimbusJwtDecoder.withJwkSource(jwkSource).build();
+        decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(new JwtTimestampValidator(),
+                new JwtTypeValidator("at+jwt")));
+        return decoder;
     }
 
     private static byte[] readPem(String value) {

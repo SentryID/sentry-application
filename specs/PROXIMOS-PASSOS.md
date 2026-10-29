@@ -1,6 +1,6 @@
 # Próximos passos — Fase 0
 
-Situação em 29/10/2026. O `init` já foi integrado ao `main`; a 0.6 está na branch `fase-0/argon2id`.
+Situação em 29/10/2026. O `init` já foi integrado ao `main`; a 0.6 e a 0.7 estão na branch `fase-0/argon2id`.
 
 ## Feito
 
@@ -10,6 +10,7 @@ Situação em 29/10/2026. O `init` já foi integrado ao `main`; a 0.6 está na b
 | 0.2 | `role_actions.cd_action` em `VARCHAR(255)`; entidade `Action` com código natural (`String code`); `spring-boot-starter-flyway`; testes com Testcontainers (CA-F0-01.1 a .3) | `b113adc` |
 | 0.3 | Entidade `System` renomeada para `ExternalSystem` | `b7dace0` |
 | 0.6 | Argon2id com prefixo `{argon2}` via `DelegatingPasswordEncoder`; parâmetros em `sentry.security.password.argon2.*` (mínimos da OWASP validados na subida); `PasswordService.verify` devolve o novo hash quando os parâmetros ficaram mais fortes; coluna `salt` removida; `UserService.save` grava o hash; testes CA-F0-02.1 a .4 | branch `fase-0/argon2id` |
+| 0.7 | `BootstrapService` no `sentry-auth`: na primeira subida cria a organização `SENTRY_PLATFORM`, o sistema `SENTRY`, o papel `SENTRY.ADMIN` e o administrador (`SENTRY_ADMIN_USERNAME`, `SENTRY_ADMIN_EMAIL`, `SENTRY_ADMIN_PASSWORD`); sem senha, gera uma de 24 caracteres e a mostra uma vez no log; idempotente pela organização; testes CA-F0-03.1 a .3 | branch `fase-0/argon2id` |
 
 Achados que a spec não previa, já tratados:
 
@@ -33,13 +34,18 @@ As recomendações das **Questões em aberto** da Fase 0 foram aceitas:
 
 - Trocar a senha exposta no commit `77462ee` em todo lugar onde é usada (RN-F0-03.2).
 
-## Próximo passo: 0.7 — Bootstrap (F0-03)
+## Próximo passo: 0.4 — Ambiente local (F0-04)
 
-A ordem do roadmap segue ajustada: **0.7 → 0.4 → 0.5 → 0.8 → 0.9**. O bootstrap usa o `PasswordService.hash` da 0.6 para gravar a senha do administrador.
+A ordem segue: **0.4 → 0.5 → 0.8 → 0.9**. O Compose deve passar `SENTRY_ADMIN_*` ao `sentry-auth` para atender o CA-F0-04.2.
 
-O re-hash da 0.6 (`PasswordService.verify(...).upgradedHash()`) passa a ser gravado no login a partir da F1-02.
+Decisões da 0.7 que valem revisar:
 
-## Depois da 0.7
+- Sem `SENTRY_ADMIN_USERNAME` e `SENTRY_ADMIN_EMAIL`, o padrão é `admin` e `admin@sentry.local`.
+- Além do que a RN-F0-03.3 pede, o bootstrap cria o papel `SENTRY.ADMIN` no sistema `SENTRY` e vincula o administrador a ele, ainda sem ações.
+- Se já existir usuário com o login ou o e-mail do administrador (e a plataforma não existir), a subida falha com mensagem clara em vez de reaproveitar o usuário.
+- O re-hash da 0.6 (`PasswordService.verify(...).upgradedHash()`) passa a ser gravado no login a partir da F1-02.
+
+## Fila da Fase 0
 
 | # | Tarefa | Ponto de atenção |
 | --- | --- | --- |

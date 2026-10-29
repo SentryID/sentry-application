@@ -2,6 +2,7 @@ package dev.sentry.api.security.password;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -14,8 +15,8 @@ class PasswordServiceTest {
     private final PasswordService passwordService = serviceWith(19456, 2, 1);
 
     private static PasswordService serviceWith(int memory, int iterations, int parallelism) {
-        return new PasswordService(PasswordEncoderConfiguration.delegatingEncoder(
-                PasswordEncoderConfiguration.argon2(memory, iterations, parallelism)));
+        return new PasswordService(new PasswordEncoderConfiguration()
+                .passwordEncoder(new Argon2Properties(memory, iterations, parallelism)));
     }
 
     // RN-F0-02.1, RN-F0-02.3
@@ -53,7 +54,6 @@ class PasswordServiceTest {
         PasswordService.Verification verification = passwordService.verify(PASSWORD, passwordService.hash(PASSWORD));
 
         assertTrue(verification.matches());
-        assertFalse(verification.needsUpgrade());
         assertNull(verification.upgradedHash());
     }
 
@@ -65,7 +65,6 @@ class PasswordServiceTest {
         PasswordService.Verification verification = passwordService.verify(PASSWORD, weakHash);
 
         assertTrue(verification.matches());
-        assertTrue(verification.needsUpgrade());
         assertTrue(verification.upgradedHash().startsWith("{argon2}$argon2id$v=19$m=19456,t=2,p=1$"));
         assertTrue(passwordService.verify(PASSWORD, verification.upgradedHash()).matches());
     }
@@ -74,7 +73,7 @@ class PasswordServiceTest {
     void verifyUpgradesHashWithFewerIterations() {
         String weakHash = serviceWith(19456, 1, 1).hash(PASSWORD);
 
-        assertTrue(passwordService.verify(PASSWORD, weakHash).needsUpgrade());
+        assertNotNull(passwordService.verify(PASSWORD, weakHash).upgradedHash());
     }
 
     @Test

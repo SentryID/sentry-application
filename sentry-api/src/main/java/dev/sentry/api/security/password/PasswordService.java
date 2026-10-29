@@ -33,7 +33,7 @@ public class PasswordService {
      */
     public Verification verify(String rawPassword, String storedHash) {
         if (rawPassword == null || storedHash == null || !passwordEncoder.matches(rawPassword, storedHash)) {
-            return Verification.FAILED;
+            return new Verification(false, null);
         }
         String upgradedHash = passwordEncoder.upgradeEncoding(storedHash) ? passwordEncoder.encode(rawPassword) : null;
         return new Verification(true, upgradedHash);
@@ -46,12 +46,5 @@ public class PasswordService {
      * @param upgradedHash novo hash a gravar, ou `null` quando o atual já está atualizado
      */
     public record Verification(boolean matches, String upgradedHash) {
-
-        static final Verification FAILED = new Verification(false, null);
-
-        /** Indica se o hash armazenado deve ser substituído por {@link #upgradedHash()}. */
-        public boolean needsUpgrade() {
-            return upgradedHash != null;
-        }
     }
 }

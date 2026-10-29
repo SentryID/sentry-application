@@ -34,7 +34,7 @@ class BootstrapServiceTest {
         when(organizationRepository.findByExternalCode(BootstrapService.PLATFORM_ORGANIZATION))
                 .thenReturn(new Organization());
 
-        assertFalse(bootstrapService.bootstrap());
+        bootstrapService.run(null);
 
         verify(organizationRepository, never()).save(any());
     }
@@ -43,7 +43,7 @@ class BootstrapServiceTest {
     void failsWhenAdminUsernameIsTaken() {
         when(userRepository.findByUsername("admin")).thenReturn(new User());
 
-        assertThrows(IllegalStateException.class, bootstrapService::bootstrap);
+        assertThrows(IllegalStateException.class, () -> bootstrapService.run(null));
         verify(organizationRepository, never()).save(any());
     }
 

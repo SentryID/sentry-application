@@ -60,28 +60,18 @@ public class BootstrapService implements ApplicationRunner {
     }
 
     /**
-     * Executa o bootstrap na subida do serviço.
+     * Na subida do serviço, cria a organização da plataforma, o sistema `SENTRY`, o papel `SENTRY.ADMIN` e o
+     * administrador, com senha em hash. Se a organização da plataforma já existe, não faz nada (RN-F0-03.5).
+     * Sem senha configurada, gera uma e a mostra uma única vez no log (RN-F0-03.4).
      *
      * @param args argumentos da aplicação (não usados)
+     * @throws IllegalStateException se já existe um usuário com o login ou o e-mail do administrador
      */
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
-        bootstrap();
-    }
-
-    /**
-     * Cria a organização da plataforma, o sistema `SENTRY`, o papel `SENTRY.ADMIN` e o administrador,
-     * com senha em hash. Se a organização da plataforma já existe, não faz nada (RN-F0-03.5). Sem
-     * senha configurada, gera uma e a mostra uma única vez no log (RN-F0-03.4).
-     *
-     * @return `true` se criou os registros, `false` se a plataforma já estava inicializada
-     * @throws IllegalStateException se já existe um usuário com o login ou o e-mail do administrador
-     */
-    @Transactional
-    public boolean bootstrap() {
         if (organizationRepository.findByExternalCode(PLATFORM_ORGANIZATION) != null) {
-            return false;
+            return;
         }
         if (userRepository.findByUsername(properties.username()) != null
                 || userRepository.findByEmail(properties.email()) != null) {
@@ -141,7 +131,6 @@ public class BootstrapService implements ApplicationRunner {
         } else {
             log.info("Administrador '{}' criado com a senha de SENTRY_ADMIN_PASSWORD", properties.username());
         }
-        return true;
     }
 
     /**

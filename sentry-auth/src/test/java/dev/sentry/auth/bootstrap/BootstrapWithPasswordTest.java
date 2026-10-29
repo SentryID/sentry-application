@@ -1,7 +1,6 @@
 package dev.sentry.auth.bootstrap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import dev.sentry.api.security.password.PasswordService;
@@ -61,7 +60,7 @@ class BootstrapWithPasswordTest {
     void runningAgainCreatesNothing() {
         List<Integer> before = TABLES.stream().map(this::count).toList();
 
-        assertFalse(bootstrapService.bootstrap());
+        bootstrapService.run(null);
 
         assertEquals(before, TABLES.stream().map(this::count).toList());
     }

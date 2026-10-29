@@ -1,0 +1,64 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-sentry}
+      POSTGRES_USER: ${POSTGRES_USER:-sentry}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sentry-local}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-sentry} -d $${POSTGRES_DB:-sentry}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  sentry-auth:
+    build:
+      context: .
+      args:
+        MODULE: sentry-auth
+        PORT: 8081
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment: &app-env
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-sentry}
+      DB_USERNAME: ${POSTGRES_USER:-sentry}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-sentry-local}
+      SENTRY_ADMIN_USERNAME: ${SENTRY_ADMIN_USERNAME:-admin}
+      SENTRY_ADMIN_EMAIL: ${SENTRY_ADMIN_EMAIL:-admin@sentry.local}
+      SENTRY_ADMIN_PASSWORD: ${SENTRY_ADMIN_PASSWORD:-}
+      SENTRY_ISSUER_URL: ${SENTRY_ISSUER_URL:-http://localhost:8081}
+    ports:
+      - "8081:8081"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8081/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  sentry-backend:
+    build:
+      context: .
+      args:
+        MODULE: sentry-backend
+        PORT: 8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment: *app-env
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+volumes:
+  postgres-data:

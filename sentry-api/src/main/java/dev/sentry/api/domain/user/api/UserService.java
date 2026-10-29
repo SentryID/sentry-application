@@ -1,6 +1,7 @@
 package dev.sentry.api.domain.user.api;
 
 import dev.sentry.api.domain.user.User;
+import dev.sentry.api.security.password.PasswordService;
 import dev.sentry.api.utils.SortUtils;
 import java.util.List;
 import org.springframework.data.domain.PageRequest;
@@ -13,10 +14,12 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final PasswordService passwordService;
 
-    public UserService(UserRepository userRepository, UserMapper userMapper) {
+    public UserService(UserRepository userRepository, UserMapper userMapper, PasswordService passwordService) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
+        this.passwordService = passwordService;
     }
 
     public List<UserRest.Response> findByQueryParams(UserRest.QueryRequest queryParams) {
@@ -32,7 +35,12 @@ public class UserService {
         return userMapper.toDto(getOrThrow(id));
     }
 
-    // ponytail: senha gravada como recebida; trocar por hash + salt quando o sentry-auth definir o algoritmo
+    /**
+     * Cria um usuário, gravando a senha com hash Argon2id (RN-F0-02.7).
+     *
+     * @param userRequest dados do novo usuário, com a senha em claro
+     * @throws ResponseStatusException 409 se o login ou o e-mail já estiverem em uso
+     */
     public void save(UserRest.SaveRequest userRequest) {
         if (userRepository.findByUsername(userRequest.username()) != null) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Já existe um usuário com esse login");
@@ -40,7 +48,9 @@ public class UserService {
         if (userRepository.findByEmail(userRequest.email()) != null) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Já existe um usuário com esse e-mail");
         }
-        userRepository.save(userMapper.toEntity(userRequest));
+        User user = userMapper.toEntity(userRequest);
+        user.setPassword(passwordService.hash(userRequest.password()));
+        userRepository.save(user);
     }
 
     public void update(Long id, UserRest.UpdateRequest userRequest) {

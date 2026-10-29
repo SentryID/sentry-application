@@ -77,6 +77,13 @@ public interface UserRest {
             @NotBlank @Email String email,
             @Schema(description = "Indica se o usuário está ativo", example = "true", requiredMode = RequiredMode.REQUIRED)
             @NotNull Boolean isActive) {
+
+        // a senha não pode aparecer em logs (RN-F0-02.6)
+        @Override
+        public String toString() {
+            return "SaveRequest[name=" + name + ", authenticationType=" + authenticationType + ", username="
+                    + username + ", password=***, email=" + email + ", isActive=" + isActive + "]";
+        }
     }
 
     @Schema(description = "Requisição para atualização de um usuário")

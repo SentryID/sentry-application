@@ -20,13 +20,15 @@
 	</modules>
 
 	<properties>
-		<maven.compiler.release>25</maven.compiler.release>
+		<maven.compiler.release>27</maven.compiler.release>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<spring.boot.version>4.1.1</spring.boot.version>
-		<lombok.version>1.18.46</lombok.version>
+		<lombok.version>1.18.48</lombok.version>
 		<mapstruct.version>1.6.3</mapstruct.version>
 		<lombok.mapstruct.binding.version>0.2.0</lombok.mapstruct.binding.version>
 		<springdoc.version>3.1.0</springdoc.version>
+		<jacoco.version>0.8.16</jacoco.version>
+		<bouncycastle.version>1.82</bouncycastle.version>
 	</properties>
 
 	<dependencyManagement>
@@ -54,6 +56,11 @@
 				<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 				<version>${springdoc.version}</version>
 			</dependency>
+			<dependency>
+				<groupId>org.bouncycastle</groupId>
+				<artifactId>bcprov-jdk18on</artifactId>
+				<version>${bouncycastle.version}</version>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 
@@ -69,12 +76,22 @@
 					<groupId>org.springframework.boot</groupId>
 					<artifactId>spring-boot-maven-plugin</artifactId>
 					<version>${spring.boot.version}</version>
+					<!-- sem o spring-boot-starter-parent, o repackage não roda sozinho e o jar não é executável -->
+					<executions>
+						<execution>
+							<goals>
+								<goal>repackage</goal>
+							</goals>
+						</execution>
+					</executions>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-compiler-plugin</artifactId>
 					<version>3.11.0</version>
 					<configuration>
+						<!-- sem o spring-boot-starter-parent, o -parameters não vem ligado; o Spring MVC precisa dele para resolver @PathVariable sem nome explícito -->
+						<parameters>true</parameters>
 						<annotationProcessorPaths>
 							<path>
 								<groupId>org.projectlombok</groupId>
@@ -96,5 +113,28 @@
 				</plugin>
 			</plugins>
 		</pluginManagement>
+
+		<plugins>
+			<!-- cobertura em target/site/jacoco de cada módulo; meta de 80% no sentry-auth só informativa na Fase 0 -->
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>${jacoco.version}</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>report</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
 	</build>
 </project>

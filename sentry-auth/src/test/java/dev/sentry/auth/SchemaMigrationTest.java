@@ -28,6 +28,16 @@ class SchemaMigrationTest {
         assertEquals(1, applied);
     }
 
+    // RN-F0-02.5
+    @Test
+    void usersTableHasNoSaltColumn() {
+        Integer saltColumns = jdbcTemplate.queryForObject("""
+                SELECT count(*) FROM information_schema.columns
+                WHERE table_name = 'users' AND column_name = 'salt'""", Integer.class);
+
+        assertEquals(0, saltColumns);
+    }
+
     // CA-F0-01.3
     @Test
     void roleActionReferencesActionByCode() {

@@ -44,9 +44,6 @@ public class User {
     @Column(name = "password")
     private String password;
 
-    @Column(name = "salt")
-    private String salt;
-
     @Column(nullable = false, unique = true)
     private String email;
 

@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 27
+          cache: maven
+
+      # build, unitários e integração (Testcontainers usa o Docker do runner)
+      - run: ./mvnw -B verify
+
+      # meta de 80% no sentry-auth só informativa na Fase 0 (RN-F0-05.5)
+      - name: Cobertura de linhas
+        if: always()
+        run: |
+          echo "| Módulo | Linhas cobertas |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| --- | --- |" >> "$GITHUB_STEP_SUMMARY"
+          for csv in */target/site/jacoco/jacoco.csv; do
+            awk -F, -v m="${csv%%/*}" 'NR>1 {miss+=$8; cov+=$9}
+              END {printf "| %s | %.1f%% |\n", m, (miss+cov) ? 100*cov/(miss+cov) : 0}' "$csv" >> "$GITHUB_STEP_SUMMARY"
+          done
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: relatorios
+          path: |
+            */target/site/jacoco/
+            */target/surefire-reports/
+
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      # CLI em vez da gitleaks-action, que exige licença para repositórios de organização
+      - run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.30.1 git /repo --no-banner --redact -v

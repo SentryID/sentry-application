@@ -11,7 +11,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import dev.sentry.api.domain.access.roleuser.api.RoleUserRepository;
+import dev.sentry.api.domain.accesslog.AccessLog;
 import dev.sentry.api.domain.accesslog.AccessLog.Channel;
+import dev.sentry.api.domain.accesslog.api.AccessLogService;
 import dev.sentry.api.domain.organization.Organization;
 import dev.sentry.api.domain.system.ExternalSystem;
 import dev.sentry.api.domain.system.api.SystemRepository;
@@ -23,6 +25,7 @@ import dev.sentry.auth.provider.DatabaseAuthenticationProvider.AttemptResult;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -36,13 +39,14 @@ class DatabaseAuthenticationProviderTest {
     private final SystemRepository systemRepository = mock(SystemRepository.class);
     private final RoleUserRepository roleUserRepository = mock(RoleUserRepository.class);
     private final PasswordService passwordService = mock(PasswordService.class);
+    private final AccessLogService accessLogService = mock(AccessLogService.class);
     private DatabaseAuthenticationProvider provider;
     private User user;
 
     @BeforeEach
     void setUp() {
         provider = new DatabaseAuthenticationProvider(userRepository, systemRepository, roleUserRepository,
-                passwordService);
+                passwordService, accessLogService);
         Organization organization = new Organization();
         ExternalSystem system = new ExternalSystem();
         system.setId(10L);
@@ -110,13 +114,33 @@ class DatabaseAuthenticationProviderTest {
         verify(passwordService).verify(eq(PASSWORD), any());
     }
 
-    // CA-F1-02.3
+    // CA-F1-02.3, RN-F1-02.6
     @Test
-    void userWithoutRoleInSystemHasNoAccess() {
+    void userWithoutRoleInSystemHasNoAccessAndReasonIsRecorded() {
         when(roleUserRepository.hasActiveRoleInSystem(1L, 10L)).thenReturn(false);
 
         assertEquals(AttemptResult.NO_SYSTEM_ACCESS, provider.evaluate("john.doe", PASSWORD, "SYS001").result());
         assertThrows(BadCredentialsException.class, () -> provider.authenticate(attempt("john.doe", PASSWORD)));
+        assertEquals("NO_SYSTEM_ACCESS", recorded().getAttemptResult());
+    }
+
+    // RN-F1-10.1, RN-F1-10.5
+    @Test
+    void successIsRecordedWithChannelAndUserAgent() {
+        provider.authenticate(attempt("john.doe", PASSWORD));
+
+        AccessLog accessLog = recorded();
+        assertEquals("SUCCESS", accessLog.getAttemptResult());
+        assertEquals(user, accessLog.getUser());
+        assertEquals(Channel.PKCE, accessLog.getChannel());
+        assertEquals("JUnit", accessLog.getUserAgent());
+        assertEquals("127.0.0.1", accessLog.getIpHost());
+    }
+
+    private AccessLog recorded() {
+        ArgumentCaptor<AccessLog> captor = ArgumentCaptor.forClass(AccessLog.class);
+        verify(accessLogService).recordAttempt(captor.capture());
+        return captor.getValue();
     }
 
     // RN-F1-01.8

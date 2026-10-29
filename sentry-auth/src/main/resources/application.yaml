@@ -11,6 +11,9 @@ spring:
 
 server:
   port: 8081
+  # RN-F1-10.4: X-Forwarded-For só vale vindo de proxy confiável; o Tomcat aceita, por padrão, só proxies de redes
+  # privadas (ajuste em server.tomcat.remoteip.internal-proxies)
+  forward-headers-strategy: native
 
 # só /actuator/health, com liveness e readiness, usado pelo healthcheck do Compose (RN-F0-04.4)
 management:
@@ -26,3 +29,9 @@ management:
 sentry:
   # URL pública do sentry-auth, usada como issuer dos tokens a partir da F1-07 (RN-F0-04.5)
   issuer-url: ${SENTRY_ISSUER_URL:http://localhost:8081}
+
+# RN-F1-10.7: log estruturado em JSON
+logging:
+  structured:
+    format:
+      console: ecs

@@ -1,6 +1,8 @@
 package dev.sentry.auth.provider;
 
 import dev.sentry.api.domain.access.roleuser.api.RoleUserRepository;
+import dev.sentry.api.domain.accesslog.AccessLog;
+import dev.sentry.api.domain.accesslog.api.AccessLogService;
 import dev.sentry.api.domain.system.ExternalSystem;
 import dev.sentry.api.domain.system.api.SystemRepository;
 import dev.sentry.api.domain.user.User;
@@ -30,21 +32,25 @@ public class DatabaseAuthenticationProvider implements AuthenticationProvider {
     private final SystemRepository systemRepository;
     private final RoleUserRepository roleUserRepository;
     private final PasswordService passwordService;
+    private final AccessLogService accessLogService;
     // RN-F1-02.4: hash de verdade, para que usuário inexistente custe o mesmo tempo que senha errada
     private final String dummyHash;
 
     public DatabaseAuthenticationProvider(UserRepository userRepository, SystemRepository systemRepository,
-            RoleUserRepository roleUserRepository, PasswordService passwordService) {
+            RoleUserRepository roleUserRepository, PasswordService passwordService,
+            AccessLogService accessLogService) {
         this.userRepository = userRepository;
         this.systemRepository = systemRepository;
         this.roleUserRepository = roleUserRepository;
         this.passwordService = passwordService;
+        this.accessLogService = accessLogService;
         this.dummyHash = passwordService.hash(UUID.randomUUID().toString());
     }
 
     /**
      * Autentica o usuário no sistema informado nos {@code details}. Em sucesso, o principal é o {@code uuid} do
-     * usuário, que vira o {@code sub} dos tokens (RN-F1-05.4).
+     * usuário, que vira o {@code sub} dos tokens (RN-F1-05.4). Toda tentativa é registrada em {@code access_logs}
+     * com o motivo real (RN-F1-02.6, RN-F1-10.1).
      *
      * @param authentication username, senha e {@link LoginAttempt}
      * @return autenticação com o {@code uuid} do usuário como nome
@@ -56,6 +62,7 @@ public class DatabaseAuthenticationProvider implements AuthenticationProvider {
         LoginAttempt attempt = (LoginAttempt) authentication.getDetails();
         Outcome outcome = evaluate(authentication.getName(), (String) authentication.getCredentials(),
                 attempt.clientId());
+        accessLogService.recordAttempt(toAccessLog(authentication.getName(), attempt, outcome));
         if (outcome.result() != AttemptResult.SUCCESS) {
             throw new BadCredentialsException(INVALID_CREDENTIALS_MESSAGE);
         }
@@ -103,6 +110,18 @@ public class DatabaseAuthenticationProvider implements AuthenticationProvider {
             }
         }
         return new Outcome(result, user, system);
+    }
+
+    private static AccessLog toAccessLog(String username, LoginAttempt attempt, Outcome outcome) {
+        AccessLog accessLog = new AccessLog();
+        accessLog.setUser(outcome.user());
+        accessLog.setSystem(outcome.system());
+        accessLog.setAttemptedUsername(username);
+        accessLog.setAttemptResult(outcome.result().name());
+        accessLog.setChannel(attempt.channel());
+        accessLog.setIpHost(attempt.ipAddress());
+        accessLog.setUserAgent(attempt.userAgent());
+        return accessLog;
     }
 
     // RN-F1-01.8

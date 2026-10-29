@@ -17,6 +17,7 @@ Situação em 29/10/2026. O `init` já foi integrado ao `main`; a 0.6, a 0.7, a 
 | 1.1 | Migração `V2__oauth_clients_and_sessions.sql`: `systems` ganha `client_type`, `client_secret_hash`, `is_trusted` e `external_code NOT NULL` (é o `client_id`); `system_redirect_uris` (`LOGIN`/`LOGOUT`); `access_logs` ganha `attempted_username`, `channel` e `user_agent`; `oauth2_authorization`, `oauth2_authorization_consent` (Spring Authorization Server 7.1) e `spring_session*` (Spring Session JDBC 4.1), adaptados ao PostgreSQL. Entidades `ExternalSystem` e `AccessLog` ajustadas para o `ddl-auto: validate` | branch `fase-1/clientes-oauth` |
 | 1.2 | `/systems` no `sentry-backend` com os dados de cliente: `clientType`, `redirectUris`, `postLogoutRedirectUris`, `isTrusted`; criação de `CONFIDENTIAL` devolve o `client_secret` uma vez (hash Argon2id no banco); `POST /systems/{id}/client-secret` rotaciona; URIs só `https` (ou `http` em `localhost`/`127.0.0.1`), sem fragmento; escopos só `openid`, `profile`, `email`, `offline_access`; `externalCode` obrigatório e imutável. Testes CA-F1-01.1, .2 e .4 | branch `fase-1/clientes-oauth` |
 | 1.3 | `DatabaseAuthenticationProvider` (um `AuthenticationProvider` do Spring Security): username sem diferenciar maiúsculas (índice único `lower(username)` na V3), usuário ativo, `DATABASE`, senha conferindo, sistema ativo e papel ativo no sistema; mensagem única "Usuário ou senha inválidos"; hash simulado para usuário inexistente; principal = `uuid` do usuário; re-hash da 0.6 gravado no login. Testes CA-F1-02.1 a .5 | branch `fase-1/clientes-oauth` |
+| 1.4 | `AccessLogService.recordAttempt` grava toda tentativa (usuário, sistema, `attempted_username`, resultado, canal, IP, User-Agent) em transação própria e nunca derruba o login; o `DatabaseAuthenticationProvider` registra o motivo real; IP via `server.forward-headers-strategy: native` (X-Forwarded-For só de proxy confiável); log do sentry-auth em JSON (ECS). Testes CA-F1-10.1 a .3 | branch `fase-1/clientes-oauth` |
 
 Achados que a spec não previa, já tratados:
 
@@ -51,7 +52,12 @@ Questões em aberto da Fase 1, recomendações aceitas em 29/10:
 
 - Trocar a senha exposta no commit `77462ee` em todo lugar onde é usada (RN-F0-03.2).
 
-## Próximo passo: 1.4 — Registro de tentativas (F1-10)
+## Próximo passo: 1.5 — Authorization Server, clientes, chaves, descoberta e JWKS (F1-07, F1-01)
+
+Notas da 1.4:
+
+- Proxies confiáveis: o Tomcat aceita X-Forwarded-For, por padrão, de redes privadas (10/8, 172.16/12, 192.168/16, 127/8). Em produção, ajustar `server.tomcat.remoteip.internal-proxies` para os IPs do proxy de entrada.
+- O CA-F1-10.4 (nenhum log com senha ou token) depende dos fluxos de token e fica coberto na 1.12/1.13.
 
 Notas da 1.3:
 

@@ -27,6 +27,7 @@
 		<mapstruct.version>1.6.3</mapstruct.version>
 		<lombok.mapstruct.binding.version>0.2.0</lombok.mapstruct.binding.version>
 		<springdoc.version>3.1.0</springdoc.version>
+		<jacoco.version>0.8.16</jacoco.version>
 		<bouncycastle.version>1.82</bouncycastle.version>
 	</properties>
 
@@ -112,5 +113,28 @@
 				</plugin>
 			</plugins>
 		</pluginManagement>
+
+		<plugins>
+			<!-- cobertura em target/site/jacoco de cada módulo; meta de 80% no sentry-auth só informativa na Fase 0 -->
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>${jacoco.version}</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>report</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
 	</build>
 </project>

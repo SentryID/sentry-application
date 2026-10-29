@@ -8,10 +8,13 @@ import java.time.Instant;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
 import org.springframework.security.oauth2.core.oidc.endpoint.OidcParameterNames;
+import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationCode;
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
@@ -21,6 +24,9 @@ import org.springframework.transaction.annotation.Transactional;
 /** Claims do access token e do ID token (F1-05), lidos do banco no momento da emissão. */
 @Component
 public class TokenClaimsCustomizer implements OAuth2TokenCustomizer<JwtEncodingContext> {
+
+    /** Atributo da autorização com o instante do login em segundos, usado quando não há código de autorização. */
+    public static final String LOGIN_TIME_ATTRIBUTE = "sentry.login_time";
 
     private static final Logger log = LoggerFactory.getLogger(TokenClaimsCustomizer.class);
 
@@ -43,13 +49,17 @@ public class TokenClaimsCustomizer implements OAuth2TokenCustomizer<JwtEncodingC
      *
      * @param context token em montagem; o {@code sub} já é o {@code uuid} do usuário (RN-F1-05.4)
      * @throws OAuth2AuthenticationException {@code invalid_grant} se o usuário estiver inativo ou excluído, o que
-     *     também barra o refresh (RN-F1-06.6)
+     *     também barra o refresh (RN-F1-06.6), ou se o refresh passar da vida máxima contada do login (RN-F1-06.5)
      */
     @Override
     @Transactional(readOnly = true)
     public void customize(JwtEncodingContext context) {
         User user = userRepository.findByUuid(UUID.fromString(context.getPrincipal().getName()));
         if (user == null || !user.getIsActive() || user.getIsDeleted()) {
+            throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_GRANT);
+        }
+        if (AuthorizationGrantType.REFRESH_TOKEN.equals(context.getAuthorizationGrantType())
+                && loginTime(context.getAuthorization()).plus(tokenProperties.refreshTokenMaxTtl()).isBefore(Instant.now())) {
             throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_GRANT);
         }
         String clientId = context.getRegisteredClient().getClientId();
@@ -76,5 +86,17 @@ public class TokenClaimsCustomizer implements OAuth2TokenCustomizer<JwtEncodingC
                 .addKeyValue("grant_type", context.getAuthorizationGrantType().getValue())
                 .addKeyValue("token_type", context.getTokenType().getValue())
                 .log("Token emitido");
+    }
+
+    /**
+     * Instante do login que originou a autorização: a emissão do código no fluxo PKCE, ou o atributo
+     * {@value #LOGIN_TIME_ATTRIBUTE} gravado pelo login direto (F1-11).
+     */
+    static Instant loginTime(OAuth2Authorization authorization) {
+        Object loginTime = authorization.getAttribute(LOGIN_TIME_ATTRIBUTE);
+        if (loginTime != null) {
+            return Instant.ofEpochSecond(((Number) loginTime).longValue());
+        }
+        return authorization.getToken(OAuth2AuthorizationCode.class).getToken().getIssuedAt();
     }
 }

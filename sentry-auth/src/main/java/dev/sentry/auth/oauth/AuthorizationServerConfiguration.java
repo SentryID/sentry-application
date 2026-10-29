@@ -20,10 +20,18 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer;
-import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService;
+import org.springframework.security.oauth2.core.OAuth2RefreshToken;
+import org.springframework.security.oauth2.core.OAuth2Token;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
+import org.springframework.security.oauth2.server.authorization.token.DelegatingOAuth2TokenGenerator;
+import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
+import org.springframework.security.oauth2.server.authorization.token.JwtGenerator;
+import org.springframework.security.oauth2.server.authorization.token.OAuth2RefreshTokenGenerator;
+import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
+import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.header.HeaderWriterFilter;
@@ -38,6 +46,7 @@ public class AuthorizationServerConfiguration {
     // RN-F1-03.8: só os fluxos usados na Fase 1 aparecem na descoberta
     private static final List<String> GRANT_TYPES = List.of("authorization_code", "refresh_token");
     private static final List<String> CLIENT_AUTH_METHODS = List.of("client_secret_basic", "client_secret_post", "none");
+    private static final String OFFLINE_ACCESS = "offline_access";
     private static final String CONTENT_SECURITY_POLICY =
             "default-src 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'";
     private static final Set<String> CACHEABLE_PATHS =
@@ -95,7 +104,19 @@ public class AuthorizationServerConfiguration {
     @Bean
     OAuth2AuthorizationService authorizationService(JdbcTemplate jdbcTemplate,
             RegisteredClientRepository registeredClientRepository) {
-        return new JdbcOAuth2AuthorizationService(jdbcTemplate, registeredClientRepository);
+        return new HashedRefreshTokenAuthorizationService(jdbcTemplate, registeredClientRepository);
+    }
+
+    /** JWT para access token e ID token; refresh token opaco só quando {@code offline_access} foi concedido (RN-F1-06.1). */
+    @Bean
+    OAuth2TokenGenerator<OAuth2Token> tokenGenerator(JwtEncoder jwtEncoder,
+            OAuth2TokenCustomizer<JwtEncodingContext> tokenCustomizer) {
+        JwtGenerator jwtGenerator = new JwtGenerator(jwtEncoder);
+        jwtGenerator.setJwtCustomizer(tokenCustomizer);
+        OAuth2RefreshTokenGenerator refreshTokenGenerator = new OAuth2RefreshTokenGenerator();
+        OAuth2TokenGenerator<OAuth2RefreshToken> offlineAccessOnly = context ->
+                context.getAuthorizedScopes().contains(OFFLINE_ACCESS) ? refreshTokenGenerator.generate(context) : null;
+        return new DelegatingOAuth2TokenGenerator(jwtGenerator, offlineAccessOnly);
     }
 
     /**

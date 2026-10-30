@@ -37,4 +37,4 @@ Na Fase 1 o `sentry-backend` (cadastro de organizações, sistemas, usuários, p
 
 - Validar o papel pelo banco (sempre atual) ou por um claim de papéis no token (F2-06, sem consulta)? Recomendado: banco, porque a API de cadastro é de baixo volume e a revogação imediata importa mais.
 - Haverá administradores por organização (só gerenciam os próprios sistemas e usuários)? Recomendado: não na Fase 2; só o `SENTRY.ADMIN` da plataforma. O escopo por organização entra com o multi-tenant.
-- Console de administração (tela) na Fase 2? Recomendado: não; o Swagger UI autenticado (RN-F2-01.7) basta até lá.
+- Console de administração (front-end) na Fase 2? Recomendado: não; o Swagger UI autenticado (RN-F2-01.7) basta até lá. Quando vier, será um front-end cliente do sistema `SENTRY`, como a tela de login.

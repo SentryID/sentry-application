@@ -74,6 +74,8 @@ As tarefas 1.3 e 1.4 podem andar em paralelo com 1.2 e 1.5; 1.12 só depende de 
 
 ## Fase 2 — Contas protegidas e administração segura
 
+O `sentry-auth` é só API: as telas (login, troca e recuperação de senha, MFA) são do front-end em React, na mesma origem, que chama a API de sessão.
+
 **Critério de saída:** a API de cadastro só responde ao `SENTRY.ADMIN` autenticado pelo próprio Sentry; um usuário define, troca e recupera a senha seguindo a política, ativa o TOTP e passa a entrar com dois fatores; tentativas repetidas são freadas; e um sistema recebe os papéis do usuário no token quando pede o escopo `roles`.
 
 ```mermaid
@@ -101,11 +103,11 @@ flowchart LR
 | 2.2 | `sentry-backend` como resource server do `sentry-auth`, exigindo `SENTRY.ADMIN` pelo banco, com auditoria (`created_by`, `updated_by`, `isTrusted`) | F2-01 | CA-F2-01.1 a .6 |
 | 2.3 | Bootstrap do sistema `SENTRY` como cliente público e Swagger UI do `sentry-backend` autenticado por PKCE | F2-01 | RN-F2-01.6, .7 |
 | 2.4 | `PasswordPolicy` no `sentry-api` (8 a 128, lista de senhas comuns, sem composição) aplicada no cadastro e no bootstrap | F2-02 | CA-F2-02.1 a .3 |
-| 2.5 | Troca obrigatória e voluntária de senha na tela, revogando sessões e refresh tokens; bloqueio no login direto | F2-02 | CA-F2-02.4 a .6 |
+| 2.5 | Troca obrigatória e voluntária de senha pela API de sessão (`POST /api/v1/session/password`), revogando sessões e refresh tokens; bloqueio no login direto | F2-02 | CA-F2-02.4 a .6 |
 | 2.6 | Limitação por conta e por IP a partir de `access_logs`, com bloqueio progressivo e desbloqueio pelo administrador | F2-05 | CA-F2-05.1 a .5 |
-| 2.7 | Recuperação de senha por e-mail com token em hash, SMTP configurável e Mailpit no Compose | F2-03 | CA-F2-03.1 a .6 |
-| 2.8 | Cadastro do TOTP (`/mfa/setup`, QR code, segredo cifrado, códigos de recuperação) | F2-04 | CA-F2-04.5 |
-| 2.9 | Segundo fator no login pela tela e no login direto, `amr`, `acr_values`, `require_mfa` e desativação pelo administrador | F2-04 | CA-F2-04.1 a .4, .6, .7 |
+| 2.7 | Recuperação de senha por API (`/api/v1/password/forgot`, `/reset/validate`, `/reset`) com token em hash e link para `SENTRY_FRONTEND_URL/reset`, SMTP configurável e Mailpit no Compose | F2-03 | CA-F2-03.1 a .6 |
+| 2.8 | Cadastro do TOTP pela API de sessão (`/mfa/setup` devolve o URI `otpauth://`, `/mfa/confirm`), segredo cifrado, códigos de recuperação | F2-04 | CA-F2-04.5 |
+| 2.9 | Segundo fator no login pela API de sessão (`mfaRequired`, `POST /api/v1/session/mfa`) e no login direto, `amr`, `acr_values`, `require_mfa` e desativação pelo administrador | F2-04 | CA-F2-04.1 a .4, .6, .7 |
 | 2.10 | Escopo `roles`: papéis do sistema no access token e no `/userinfo` | F2-06 | CA-F2-06.1 a .4 |
 | 2.11 | Documentação: administração pela API, MFA, recuperação e papéis no token | Todos | — |
 
@@ -118,7 +120,7 @@ A 2.1 vem antes de tudo. Depois dela, 2.2 e 2.3 (backend) andam em paralelo com 
 - Back-channel logout (avisar os outros sistemas no logout).
 - Passkeys (WebAuthn), CAPTCHA e lembrar o aparelho no MFA.
 - Ações no token, introspecção (RFC 7662) e o serviço `sentry-authorization`.
-- Console de administração com tela própria.
+- Console de administração (front-end).
 
 ## Decisões pendentes que afetam o roadmap
 

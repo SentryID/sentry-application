@@ -80,6 +80,8 @@ Segunda etapa, feita (decisão do usuário: o React hospeda a tela do OIDC):
 - `/connect/logout` sem URI válida redireciona para `SENTRY_LOGIN_URL`, sem página.
 - O contrato da API e a montagem do proxy (Vite/nginx) estão na seção 6 de `docs/integracao.md`. O `examples/spa` continua como sistema cliente; precisa da tela do React no ar.
 
+Spec da Fase 2 ajustada para essa arquitetura: troca de senha, recuperação de senha e MFA são APIs JSON consumidas pelo React (`/api/v1/session/password`, `/api/v1/password/*`, `/api/v1/session/mfa*`), sem telas no `sentry-auth`; o e-mail de recuperação leva a `SENTRY_FRONTEND_URL/reset`. A F1-04 (tela hospedada) fica substituída pela tela do front-end mais a API de sessão.
+
 Pendente de decisão do usuário: se até as anotações Bean Validation dos DTOs (`@Valid`, `@NotBlank`) devem sair para os services.
 
 ## Próximo passo: revisar a spec da Fase 2

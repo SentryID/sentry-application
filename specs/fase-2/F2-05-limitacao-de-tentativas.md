@@ -6,14 +6,14 @@
 
 ## Contexto
 
-A Fase 1 registra toda tentativa em `access_logs` (F1-10), mas não limita nada: é possível testar senhas sem parar, pela tela ou pelo login direto. A Fase 2 lê esses registros para frear ataques de força bruta (contra uma conta) e de credential stuffing (de um IP contra muitas contas), sem permitir que um atacante bloqueie a conta de alguém por muito tempo.
+A Fase 1 registra toda tentativa em `access_logs` (F1-10), mas não limita nada: é possível testar senhas sem parar, pela API de sessão (tela do front-end) ou pelo login direto. A Fase 2 lê esses registros para frear ataques de força bruta (contra uma conta) e de credential stuffing (de um IP contra muitas contas), sem permitir que um atacante bloqueie a conta de alguém por muito tempo.
 
 ## Regras
 
 - **RN-F2-05.1** Por conta: 5 falhas consecutivas (`INVALID_CREDENTIALS`, `MFA_INVALID`) em 15 minutos DEVEM bloquear novas tentativas daquela conta por 15 minutos. Cada novo bloqueio no mesmo dia dobra o tempo, até 4 horas. Um login com sucesso zera a contagem.
 - **RN-F2-05.2** Por IP: 20 falhas em 5 minutos, de qualquer conta, DEVEM bloquear aquele IP por 15 minutos.
 - **RN-F2-05.3** Durante o bloqueio de conta a senha NÃO DEVE ser verificada, e a resposta DEVE ser a mesma mensagem genérica de F1-02, para não revelar que a conta existe nem que está bloqueada. O motivo real vai para `access_logs` como `ACCOUNT_LOCKED`.
-- **RN-F2-05.4** Durante o bloqueio de IP, a tela de login DEVE mostrar "Muitas tentativas. Tente de novo em alguns minutos" e o login direto DEVE responder `429` com `Retry-After`. O motivo vai para `access_logs` como `IP_THROTTLED`.
+- **RN-F2-05.4** Durante o bloqueio de IP, a API de sessão e o login direto DEVEM responder `429` com `Retry-After` e a mensagem "Muitas tentativas. Tente de novo em alguns minutos" (Problem Details na API de sessão, erro OAuth no login direto). O motivo vai para `access_logs` como `IP_THROTTLED`.
 - **RN-F2-05.5** Os limites e tempos DEVEM ser configuráveis (`SENTRY_LOCKOUT_*`), e o IP DEVE ser o mesmo resolvido em F1-10 (proxies confiáveis).
 - **RN-F2-05.6** Os pedidos de recuperação de senha (F2-03) DEVEM ter limite próprio: 3 por endereço informado por hora e 10 por IP por hora, sempre com a mesma resposta.
 - **RN-F2-05.7** O administrador DEVE poder desbloquear uma conta pelo `sentry-backend`; o evento vai para o log de auditoria.

@@ -3,6 +3,9 @@
 Como cadastrar um sistema externo e autenticar usuários por ele. O Sentry é um provedor OpenID Connect padrão: qualquer
 biblioteca OIDC funciona configurada só com o **issuer** e o **client_id**, sem SDK próprio.
 
+Para ver a jornada completa, com cada requisição, resposta e o conteúdo dos tokens, leia a
+[Jornada de autenticação](jornada-de-autenticacao.md).
+
 Nos exemplos, o `sentry-auth` está em `http://localhost:8081` (o issuer, `SENTRY_ISSUER_URL`) e o `sentry-backend` em
 `http://localhost:8080`.
 

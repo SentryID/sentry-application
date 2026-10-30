@@ -5,8 +5,8 @@ import dev.sentry.api.domain.system.ExternalSystem;
 import dev.sentry.api.domain.system.api.SystemRepository;
 import dev.sentry.api.domain.user.User;
 import dev.sentry.api.domain.user.api.UserRepository;
-import dev.sentry.auth.provider.DatabaseAuthenticationProvider;
 import dev.sentry.auth.provider.LoginAttempt;
+import dev.sentry.auth.provider.UserAuthenticationProvider;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -85,7 +85,7 @@ public class SessionService {
             authentication = authenticationManager.authenticate(attempt);
         } catch (AuthenticationException e) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                    DatabaseAuthenticationProvider.INVALID_CREDENTIALS_MESSAGE);
+                    UserAuthenticationProvider.INVALID_CREDENTIALS_MESSAGE);
         }
         request.getSession();
         request.changeSessionId();

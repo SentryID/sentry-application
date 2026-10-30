@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import dev.sentry.api.domain.user.User;
+import dev.sentry.api.domain.user.User.AuthenticationType;
 import dev.sentry.api.security.password.PasswordService;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -27,7 +28,7 @@ class UserServiceTest {
     private final UserService userService = new UserService(userRepository, userMapper, passwordService);
 
     private static UserRest.SaveRequest saveRequest() {
-        return new UserRest.SaveRequest("Maria Silva", "LOCAL", "maria.silva", PASSWORD, "maria@sentry.dev", true);
+        return new UserRest.SaveRequest("Maria Silva", AuthenticationType.DATABASE, "maria.silva", PASSWORD, "maria@sentry.dev", true);
     }
 
     // RN-F0-02.7

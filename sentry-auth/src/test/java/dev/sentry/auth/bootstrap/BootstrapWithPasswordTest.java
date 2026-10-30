@@ -40,6 +40,13 @@ class BootstrapWithPasswordTest {
         assertTrue(passwordService.verify("S3nha!forte", stored).matches());
     }
 
+    // o admin entra pelo banco: é o tipo que o DatabaseCredentialVerifier confere
+    @Test
+    void createsAdminAsDatabaseUser() {
+        assertEquals("DATABASE", jdbcTemplate.queryForObject(
+                "SELECT authentication_type FROM users WHERE username = 'root.admin'", String.class));
+    }
+
     @Test
     void linksAdminToSentryAdminRoleOfPlatformSystem() {
         Integer links = jdbcTemplate.queryForObject("""

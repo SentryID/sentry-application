@@ -19,12 +19,12 @@ import org.springframework.transaction.annotation.Transactional;
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
 @Transactional
-class DatabaseAuthenticationIntegrationTest {
+class UserAuthenticationIntegrationTest {
 
     private static final String PASSWORD = "S3nha!forte";
 
     @Autowired
-    private DatabaseAuthenticationProvider provider;
+    private UserAuthenticationProvider provider;
 
     @Autowired
     private PasswordService passwordService;

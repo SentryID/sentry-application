@@ -35,7 +35,7 @@ class UserPasswordStorageTest {
         mockMvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name": "Maria Silva", "authenticationType": "LOCAL", "username": "maria.silva",
+                                {"name": "Maria Silva", "authenticationType": "DATABASE", "username": "maria.silva",
                                  "password": "%s", "email": "maria@sentry.dev", "isActive": true}
                                 """.formatted(PASSWORD)))
                 .andExpect(status().isCreated());

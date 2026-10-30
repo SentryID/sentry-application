@@ -142,7 +142,7 @@ Notas da 1.4:
 Notas da 1.3:
 
 - O sistema que pede o login vem nos `details` da autenticação (`LoginAttempt`: client_id, canal, IP, User-Agent).
-- Usuário de outro `authentication_type` (ex.: LDAP) cai como `INVALID_CREDENTIALS`. Quando o LDAP entrar, o provedor de banco devolve `null` para esses usuários e o `ProviderManager` tenta o próximo (RN-F1-02.7); a classe vazia `LDAPAuthenticationProvider` foi removida.
+- Há um único `AuthenticationProvider` (`UserAuthenticationProvider`), que faz as regras comuns e registra a tentativa uma vez; a senha é conferida pelo `CredentialVerifier` do `authentication_type` do usuário (RN-F1-02.7). O LDAP entra como um `LdapCredentialVerifier`; até lá, usuário `LDAP` cai como `INVALID_CREDENTIALS`. Vários provedores no `ProviderManager` duplicariam o registro, porque ele tenta o próximo a cada falha.
 - Usuário excluído é registrado como `USER_INACTIVE` (a RN-F1-10.2 não tem um valor próprio para excluído).
 
 Notas da 1.2:

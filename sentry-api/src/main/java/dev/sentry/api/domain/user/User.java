@@ -3,6 +3,8 @@ package dev.sentry.api.domain.user;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -35,8 +37,9 @@ public class User {
     @Column(nullable = false)
     private String name;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "authentication_type")
-    private String authenticationType;
+    private AuthenticationType authenticationType;
 
     @Column(nullable = false, unique = true)
     private String username;
@@ -68,4 +71,7 @@ public class User {
     @LastModifiedDate
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    /** Onde a senha do usuário é conferida (RN-F1-02.7). */
+    public enum AuthenticationType { DATABASE, LDAP }
 }

@@ -24,7 +24,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 class AccessLogRecordingTest {
 
     @Autowired
-    private DatabaseAuthenticationProvider provider;
+    private UserAuthenticationProvider provider;
 
     @Autowired
     private PasswordService passwordService;

@@ -5,8 +5,8 @@ import dev.sentry.api.domain.system.ExternalSystem;
 import dev.sentry.api.domain.system.api.SystemRepository;
 import dev.sentry.api.security.password.PasswordService;
 import dev.sentry.auth.oauth.TokenClaimsCustomizer;
-import dev.sentry.auth.provider.DatabaseAuthenticationProvider;
 import dev.sentry.auth.provider.LoginAttempt;
+import dev.sentry.auth.provider.UserAuthenticationProvider;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -141,7 +141,7 @@ public class LoginService {
             return authenticationManager.authenticate(attempt);
         } catch (AuthenticationException e) {
             throw new LoginException(HttpStatus.UNAUTHORIZED, "invalid_grant",
-                    DatabaseAuthenticationProvider.INVALID_CREDENTIALS_MESSAGE);
+                    UserAuthenticationProvider.INVALID_CREDENTIALS_MESSAGE);
         }
     }
 

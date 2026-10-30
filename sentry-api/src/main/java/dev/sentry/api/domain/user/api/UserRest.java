@@ -1,5 +1,6 @@
 package dev.sentry.api.domain.user.api;
 
+import dev.sentry.api.domain.user.User.AuthenticationType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import jakarta.validation.constraints.Email;
@@ -19,8 +20,8 @@ public interface UserRest {
             String username,
             @Schema(description = "E-mail do usuário (busca parcial, sem diferenciar maiúsculas)", example = "maria@sentry.dev")
             String email,
-            @Schema(description = "Tipo de autenticação do usuário", example = "LOCAL")
-            String authenticationType,
+            @Schema(description = "Tipo de autenticação do usuário", example = "DATABASE")
+            AuthenticationType authenticationType,
             @Schema(description = "Identificador público do usuário", example = "3f2504e0-4f89-11d3-9a0c-0305e82c3301")
             UUID uuid,
             @Schema(description = "Indica se o usuário está ativo", example = "true")
@@ -43,8 +44,8 @@ public interface UserRest {
             UUID uuid,
             @Schema(description = "Nome do usuário", example = "Maria Silva")
             String name,
-            @Schema(description = "Tipo de autenticação do usuário", example = "LOCAL")
-            String authenticationType,
+            @Schema(description = "Tipo de autenticação do usuário", example = "DATABASE")
+            AuthenticationType authenticationType,
             @Schema(description = "Login do usuário", example = "maria.silva")
             String username,
             @Schema(description = "E-mail do usuário", example = "maria@sentry.dev")
@@ -67,8 +68,8 @@ public interface UserRest {
     record SaveRequest(
             @Schema(description = "Nome do usuário", example = "Maria Silva", requiredMode = RequiredMode.REQUIRED)
             @NotBlank String name,
-            @Schema(description = "Tipo de autenticação do usuário", example = "LOCAL")
-            String authenticationType,
+            @Schema(description = "Tipo de autenticação do usuário", example = "DATABASE")
+            AuthenticationType authenticationType,
             @Schema(description = "Login do usuário", example = "maria.silva", requiredMode = RequiredMode.REQUIRED)
             @NotBlank String username,
             @Schema(description = "Senha do usuário", example = "S3nh@Forte", requiredMode = RequiredMode.REQUIRED)
@@ -90,8 +91,8 @@ public interface UserRest {
     record UpdateRequest(
             @Schema(description = "Nome do usuário", example = "Maria Silva", requiredMode = RequiredMode.REQUIRED)
             @NotBlank String name,
-            @Schema(description = "Tipo de autenticação do usuário", example = "LOCAL")
-            String authenticationType,
+            @Schema(description = "Tipo de autenticação do usuário", example = "DATABASE")
+            AuthenticationType authenticationType,
             @Schema(description = "E-mail do usuário", example = "maria@sentry.dev", requiredMode = RequiredMode.REQUIRED)
             @NotBlank @Email String email,
             @Schema(description = "Indica se o usuário está ativo", example = "true", requiredMode = RequiredMode.REQUIRED)

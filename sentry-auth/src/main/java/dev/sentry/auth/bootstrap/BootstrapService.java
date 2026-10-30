@@ -9,6 +9,7 @@ import dev.sentry.api.domain.organization.api.OrganizationRepository;
 import dev.sentry.api.domain.system.ExternalSystem;
 import dev.sentry.api.domain.system.api.SystemRepository;
 import dev.sentry.api.domain.user.User;
+import dev.sentry.api.domain.user.User.AuthenticationType;
 import dev.sentry.api.domain.user.api.UserRepository;
 import dev.sentry.api.security.password.PasswordService;
 import java.security.SecureRandom;
@@ -109,7 +110,7 @@ public class BootstrapService implements ApplicationRunner {
 
         User admin = new User();
         admin.setName("Administrador");
-        admin.setAuthenticationType("DATABASE");
+        admin.setAuthenticationType(AuthenticationType.DATABASE);
         admin.setUsername(properties.username());
         admin.setEmail(properties.email());
         admin.setPassword(passwordService.hash(password));

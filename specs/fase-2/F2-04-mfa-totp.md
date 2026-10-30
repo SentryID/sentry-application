@@ -10,7 +10,7 @@ A tabela `mfa_tokens` da V1 (código, token, username, uso único) desenha um c�
 
 ## Regras
 
-O `sentry-auth` não tem telas: a tela de login e as demais são do front-end (React), servido na mesma origem, que chama a API de sessão (`/api/v1/session/**`, cookie `SESSION` e CSRF por `X-XSRF-TOKEN`, ver `docs/integracao.md`).
+O `sentry-auth` não tem telas: a tela de login e as demais são do front-end (React), servido na mesma origem, que chama a API de sessão (`/api/v1/session/**`, cookie `SESSION` e CSRF por `X-XSRF-TOKEN`, ver `../../docs/integracao_frontend.md`).
 
 - **RN-F2-04.1** O MFA DEVE ser opcional por usuário. Um sistema PODE exigi-lo para seus usuários (`systems.require_mfa`); o administrador da plataforma (`SENTRY.ADMIN`) DEVE sempre ter MFA.
 - **RN-F2-04.2** O cadastro DEVE ser feito pela API de sessão, com sessão SSO ativa e confirmação da senha: `POST /api/v1/session/mfa/setup` devolve a chave em texto e o URI `otpauth://totp/Sentry:<username>?secret=...&issuer=Sentry` (o front-end desenha o QR code), e `POST /api/v1/session/mfa/confirm` só ativa o MFA após um código válido.

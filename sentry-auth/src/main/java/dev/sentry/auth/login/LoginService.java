@@ -163,6 +163,7 @@ public class LoginService {
                 .authorizationGrant(principal);
 
         OAuth2Token jwt = tokenGenerator.generate(context.tokenType(OAuth2TokenType.ACCESS_TOKEN).build());
+        assert jwt != null;
         var accessToken = new OAuth2AccessToken(OAuth2AccessToken.TokenType.BEARER, jwt.getTokenValue(),
                 jwt.getIssuedAt(), jwt.getExpiresAt(), scopes);
         authorization.token(accessToken, metadata -> metadata.put(OAuth2Authorization.Token.CLAIMS_METADATA_NAME,

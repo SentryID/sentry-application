@@ -1,4 +1,4 @@
-package dev.sentry.auth;
+package dev.sentry.auth.errors;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.boot.webmvc.error.ErrorController;

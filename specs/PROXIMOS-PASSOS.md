@@ -27,7 +27,7 @@ Situação em 29/10/2026. O `init` já foi integrado ao `main`; a 0.6, a 0.7, a 
 | 1.11 | Sessão SSO no PostgreSQL (Spring Session JDBC), cookie `HttpOnly`/`SameSite=Lax`/`Secure` em HTTPS, renovada no login, 30 min sem uso e 12 h no máximo (`SENTRY_SESSION_IDLE_TIMEOUT`, `SENTRY_SESSION_MAX_AGE`); `prompt=login` encerra a sessão e pede a senha; `/connect/logout` revoga todas as autorizações da sessão (`sid`), volta à `post_logout_redirect_uri` cadastrada com o `state` e, com URI não cadastrada, encerra a sessão e mostra a página do Sentry; o papel no sistema passou a ser exigido também na emissão do token (SSO e refresh). Testes CA-F1-09.1 a .5 | branch `fase-1/clientes-oauth` |
 | 1.12 | `POST /api/v1/auth/login`: o sistema se autentica por HTTP Basic (só `CONFIDENTIAL`; público ou segredo errado → `401 invalid_client`; não confiável → `403 unauthorized_client`); usuário validado pelos mesmos provedores da tela, com canal `DIRECT` no `access_logs`; mesmos tokens do fluxo PKCE (escopo padrão `openid profile`, refresh só com `offline_access`), gravados como autorização para o refresh funcionar no `/oauth2/token`; cadeia sem sessão (não cria SSO) e sem CSRF; só HTTPS fora de localhost; documentado no OpenAPI (`/v3/api-docs`, `/swagger-ui.html`). Testes CA-F1-11.1 a .6 e CA-F1-10.4 (nenhum log com senha ou token) | branch `fase-1/clientes-oauth` |
 | 1.13 | `EndToEndOidcTest`: servidor numa porta real e um cliente OIDC genérico (Spring Security OAuth2 Client) configurado só com issuer e `client_id` faz descoberta, PKCE, login pela tela, troca do código, valida o ID token pelo JWKS, chama o `/userinfo` e faz logout; um sistema confidencial renova o token e um confiável faz login direto. `examples/spa`: SPA com `oidc-client-ts` para rodar à mão, com o `SYS001` do seed `dev` como cliente público em `http://127.0.0.1:3000/`. CORS para os endpoints que o SPA chama, liberado só para origens de URIs cadastradas de sistemas ativos. Teste CA-F1-03.6 e critério de saída da Fase 1 | branch `fase-1/clientes-oauth` |
-| 1.14 | `docs/integracao.md`: cadastro do sistema no `sentry-backend`, login por PKCE (com exemplos para SPA e Spring Boot), login direto, tokens e validação por APIs, refresh, revogação, userinfo, logout e variáveis de configuração; link no `README.md` | branch `fase-1/clientes-oauth` |
+| 1.14 | `../docs/integracao_frontend.md`: cadastro do sistema no `sentry-backend`, login por PKCE (com exemplos para SPA e Spring Boot), login direto, tokens e validação por APIs, refresh, revogação, userinfo, logout e variáveis de configuração; link no `README.md` | branch `fase-1/clientes-oauth` |
 
 Achados que a spec não previa, já tratados:
 
@@ -62,6 +62,10 @@ Questões em aberto da Fase 1, recomendações aceitas em 29/10:
 
 - Trocar a senha exposta no commit `77462ee` em todo lugar onde é usada (RN-F0-03.2).
 
+## Branch de desenvolvimento principal
+
+`develop` é a branch de desenvolvimento principal, criada em 30/10/2026 a partir da `refactor/auth-api`. Ela contém as branches de trabalho anteriores: `fase-0/argon2id`, `fase-1/clientes-oauth`, `fase-2/specs` e `refactor/auth-api`. Novas branches de trabalho saem dela; o `main` recebe os merges dela, e a imagem do `sentry-auth` continua sendo publicada só a partir do `main`.
+
 ## Refatoração do sentry-auth em andamento (branch `refactor/auth-api`)
 
 Pedido do usuário: o `sentry-auth` vira só backend, chamado pelo front-end em React (sem telas), o login direto passa ao domínio de login, nenhuma regra fica em controller e o tratamento de exceções é global.
@@ -78,7 +82,7 @@ Segunda etapa, feita (decisão do usuário: o React hospeda a tela do OIDC):
 - OIDC headless: sem sessão, o `/oauth2/authorize` (e o `prompt=login`) redireciona para `SENTRY_LOGIN_URL`, a tela do React na mesma origem, com o pedido guardado na sessão.
 - API de sessão em `dev.sentry.auth.session` (`SessionController`, `SessionService`): `GET /api/v1/session/context`, `POST /api/v1/session/login` (devolve o `redirectUrl` que retoma a autorização), `GET /api/v1/session/me` e `POST /api/v1/session/logout`. Cookie `SESSION` e CSRF por cookie `XSRF-TOKEN` + cabeçalho `X-XSRF-TOKEN`.
 - `/connect/logout` sem URI válida redireciona para `SENTRY_LOGIN_URL`, sem página.
-- O contrato da API e a montagem do proxy (Vite/nginx) estão na seção 6 de `docs/integracao.md`. O `examples/spa` continua como sistema cliente; precisa da tela do React no ar.
+- O contrato da API e a montagem do proxy (Vite/nginx) estão na seção 6 de `../docs/integracao_frontend.md`. O `examples/spa` continua como sistema cliente; precisa da tela do React no ar.
 
 Spec da Fase 2 ajustada para essa arquitetura: troca de senha, recuperação de senha e MFA são APIs JSON consumidas pelo React (`/api/v1/session/password`, `/api/v1/password/*`, `/api/v1/session/mfa*`), sem telas no `sentry-auth`; o e-mail de recuperação leva a `SENTRY_FRONTEND_URL/reset`. A F1-04 (tela hospedada) fica substituída pela tela do front-end mais a API de sessão.
 

@@ -1,4 +1,4 @@
-package dev.sentry.auth;
+package dev.sentry.auth.errors;
 
 import dev.sentry.auth.login.LoginException;
 import dev.sentry.auth.login.LoginRest;

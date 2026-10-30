@@ -6,7 +6,7 @@ Aplicação open source de autenticação e autorização. Módulos:
 - `sentry-backend` (porta 8080): cadastro de organizações, sistemas, usuários e permissões.
 - `sentry-api`: código compartilhado (entidades, serviços, migrações Flyway).
 
-Para integrar um sistema (cadastro, login por PKCE ou direto, tokens e logout), veja [docs/integracao.md](docs/integracao.md).
+Para integrar um sistema (cadastro, login por PKCE ou direto, tokens e logout), veja [docs/integracao_frontend.md](docs/integracao_frontend.md).
 
 ## Ambiente local com Docker
 

@@ -1,4 +1,4 @@
-package dev.sentry.auth;
+package dev.sentry.auth.errors;
 
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.HttpServletRequest;

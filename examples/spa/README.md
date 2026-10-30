@@ -7,7 +7,7 @@ Página estática que faz login no Sentry pelo fluxo Authorization Code + PKCE c
 O teste automatizado equivalente, com uma biblioteca OIDC genérica em Java, é o `EndToEndOidcTest` do `sentry-auth`.
 
 Este exemplo é um **sistema cliente**: a senha é digitada na tela de login do front-end do Sentry (React), que precisa
-estar no ar em `SENTRY_LOGIN_URL`, na mesma origem do `sentry-auth` (ver a seção 6 de `docs/integracao.md`). Ajuste o
+estar no ar em `SENTRY_LOGIN_URL`, na mesma origem do `sentry-auth` (ver a seção 6 de `../../docs/integracao_frontend.md`). Ajuste o
 `authority` do `index.html` para o `SENTRY_ISSUER_URL`.
 
 ## Rodar

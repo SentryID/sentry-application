@@ -2,6 +2,7 @@ package dev.sentry.auth;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import dev.sentry.auth.errors.ErrorDetailsService;
 import jakarta.servlet.RequestDispatcher;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ProblemDetail;

@@ -10,7 +10,7 @@ Hoje qualquer senha não vazia é aceita (só o `@NotBlank` do `UserRest.SaveReq
 
 ## Regras
 
-O `sentry-auth` não tem telas: a tela de login e as demais são do front-end (React), servido na mesma origem, que chama a API de sessão (`/api/v1/session/**`, cookie `SESSION` e CSRF por `X-XSRF-TOKEN`, ver `docs/integracao.md`).
+O `sentry-auth` não tem telas: a tela de login e as demais são do front-end (React), servido na mesma origem, que chama a API de sessão (`/api/v1/session/**`, cookie `SESSION` e CSRF por `X-XSRF-TOKEN`, ver `../../docs/integracao_frontend.md`).
 
 - **RN-F2-02.1** Toda senha definida (cadastro, troca, recuperação em F2-03, bootstrap com `SENTRY_ADMIN_PASSWORD`) DEVE ter de 8 a 128 caracteres, contados em pontos de código Unicode, após normalização NFKC.
 - **RN-F2-02.2** A senha NÃO DEVE estar na lista de senhas comuns embarcada no `sentry-api`, nem ser igual (sem diferenciar maiúsculas) ao username ou à parte local do e-mail.

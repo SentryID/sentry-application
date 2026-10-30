@@ -10,7 +10,7 @@ A tabela `password_tokens` existe desde a V1 (token, uso único, validade, usuá
 
 ## Regras
 
-O `sentry-auth` não tem telas: a tela de login e as demais são do front-end (React), servido na mesma origem, que chama a API de sessão (`/api/v1/session/**`, cookie `SESSION` e CSRF por `X-XSRF-TOKEN`, ver `docs/integracao.md`).
+O `sentry-auth` não tem telas: a tela de login e as demais são do front-end (React), servido na mesma origem, que chama a API de sessão (`/api/v1/session/**`, cookie `SESSION` e CSRF por `X-XSRF-TOKEN`, ver `../../docs/integracao_frontend.md`).
 
 - **RN-F2-03.1** A tela de login do front-end DEVE oferecer "Esqueci minha senha". O pedido de autorização em andamento continua guardado na sessão.
 - **RN-F2-03.2** `POST /api/v1/password/forgot` DEVE aceitar username ou e-mail e responder sempre `202` com o mesmo corpo, exista o usuário ou não, esteja ativo ou não. O tempo de resposta NÃO DEVE revelar a diferença (o envio é assíncrono).

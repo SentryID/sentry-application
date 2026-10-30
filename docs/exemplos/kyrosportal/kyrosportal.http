@@ -1,0 +1,37 @@
+### Login direto do juliang pelo sistema KYROSPORTAL (F1-11)
+# O sistema se autentica por HTTP Basic (client_id:segredo); o usuário vai no corpo.
+# Funciona no IntelliJ (HTTP Client) e no VS Code (extensão REST Client).
+# Ver docs/simulacao-login-kyrosportal.md.
+
+@sentryAuth = http://localhost:8081
+@clientId = KYROSPORTAL
+@clientSecret = kyros-portal-segredo-local
+
+POST {{sentryAuth}}/api/v1/auth/login
+Authorization: Basic {{clientId}} {{clientSecret}}
+Content-Type: application/json
+
+{
+  "username": "juliang",
+  "password": "Kyros@123",
+  "scope": "openid profile email offline_access"
+}
+
+### Senha errada: 401 invalid_grant e INVALID_CREDENTIALS em access_logs
+
+POST {{sentryAuth}}/api/v1/auth/login
+Authorization: Basic {{clientId}} {{clientSecret}}
+Content-Type: application/json
+
+{
+  "username": "juliang",
+  "password": "senha-errada"
+}
+
+### Renovar os tokens com o refresh_token da primeira resposta
+
+POST {{sentryAuth}}/oauth2/token
+Authorization: Basic {{clientId}} {{clientSecret}}
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=refresh_token&refresh_token=<cole aqui o refresh_token>

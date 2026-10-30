@@ -6,7 +6,7 @@ Aplicação open source de autenticação e autorização. Módulos:
 - `sentry-backend` (porta 8080): cadastro de organizações, sistemas, usuários e permissões.
 - `sentry-api`: código compartilhado (entidades, serviços, migrações Flyway).
 
-Para integrar um sistema (cadastro, login por PKCE ou direto, tokens e logout), veja [docs/integracao_frontend.md](docs/integracao_frontend.md). O passo a passo do login, com requisições, respostas e os tokens explicados, está em [docs/jornada-de-autenticacao.md](docs/jornada-de-autenticacao.md). Para conferir a senha num LDAP, veja [docs/provedor-ldap.md](docs/provedor-ldap.md).
+Para integrar um sistema (cadastro, login por PKCE ou direto, tokens e logout), veja [docs/integracao_frontend.md](docs/integracao_frontend.md). O passo a passo do login, com requisições, respostas e os tokens explicados, está em [docs/jornada-de-autenticacao.md](docs/jornada-de-autenticacao.md). Para conferir a senha num LDAP, veja [docs/provedor-ldap.md](docs/provedor-ldap.md). Um exemplo completo de login local, com SQL e requisição, está em [docs/simulacao-login-kyrosportal.md](docs/simulacao-login-kyrosportal.md).
 
 ## Ambiente local com Docker
 

@@ -8,15 +8,12 @@ import java.io.IOException;
 import java.net.CookieManager;
 import java.net.ServerSocket;
 import java.net.URI;
-import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -70,13 +67,18 @@ class EndToEndOidcTest {
     @Autowired
     private PasswordService passwordService;
 
+    private static final String LOGIN_URL = "http://127.0.0.1:" + PORT + "/login";
+
+    private final CookieManager cookies = new CookieManager();
     private final HttpClient browser = HttpClient.newBuilder()
-            .cookieHandler(new CookieManager()).followRedirects(HttpClient.Redirect.NEVER).build();
+            .cookieHandler(cookies).followRedirects(HttpClient.Redirect.NEVER).build();
 
     @DynamicPropertySource
     static void serverOnFixedPort(DynamicPropertyRegistry registry) {
         registry.add("server.port", () -> PORT);
         registry.add("sentry.issuer-url", () -> ISSUER);
+        // a tela do front-end fica na mesma origem, atrás do mesmo proxy, como em produção
+        registry.add("sentry.login-url", () -> LOGIN_URL);
     }
 
     private static int freePort() {
@@ -122,6 +124,11 @@ class EndToEndOidcTest {
         return resolver.resolve(request);
     }
 
+    private String cookie(String name) {
+        return cookies.getCookieStore().getCookies().stream().filter(c -> c.getName().equals(name))
+                .map(java.net.HttpCookie::getValue).findFirst().orElseThrow();
+    }
+
     private HttpResponse<String> send(HttpRequest request) throws Exception {
         return browser.send(request, HttpResponse.BodyHandlers.ofString());
     }
@@ -134,18 +141,24 @@ class EndToEndOidcTest {
         return response.headers().firstValue("Location").orElseThrow();
     }
 
-    /** Navega como um usuário: autorização, tela de login preenchida, volta ao redirect_uri com o código. */
+    /**
+     * Navega como um usuário com a tela de login do front-end: a autorização manda para a tela, a tela lê o contexto e
+     * faz login pela API de sessão (CSRF do cookie {@code XSRF-TOKEN} no cabeçalho {@code X-XSRF-TOKEN}) e o navegador
+     * abre a URL devolvida, que volta ao redirect_uri com o código.
+     */
     private OAuth2AuthorizationResponse browserLogin(OAuth2AuthorizationRequest authorizationRequest) throws Exception {
         HttpResponse<String> toLogin = get(authorizationRequest.getAuthorizationRequestUri());
-        HttpResponse<String> loginPage = get(location(toLogin));
-        Matcher csrf = Pattern.compile("name=\"_csrf\"[^>]*value=\"([^\"]+)\"").matcher(loginPage.body());
-        assertThat(csrf.find()).as("token CSRF na tela de login").isTrue();
-        String form = "username=e2e.user&password=" + URLEncoder.encode(OAuthFixtures.PASSWORD, StandardCharsets.UTF_8)
-                + "&_csrf=" + csrf.group(1);
-        HttpResponse<String> afterLogin = send(HttpRequest.newBuilder(URI.create(ISSUER + "/login"))
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .POST(HttpRequest.BodyPublishers.ofString(form)).build());
-        String callback = location(get(location(afterLogin)));
+        assertThat(location(toLogin)).isEqualTo(LOGIN_URL);
+        HttpResponse<String> context = get("/api/v1/session/context");
+        assertThat(JsonPath.<String>read(context.body(), "$.systemName"))
+                .isEqualTo("Portal " + authorizationRequest.getClientId());
+        HttpResponse<String> afterLogin = send(HttpRequest.newBuilder(URI.create(ISSUER + "/api/v1/session/login"))
+                .header("Content-Type", "application/json").header("X-XSRF-TOKEN", cookie("XSRF-TOKEN"))
+                .POST(HttpRequest.BodyPublishers.ofString(
+                        "{\"username\": \"e2e.user\", \"password\": \"" + OAuthFixtures.PASSWORD + "\"}"))
+                .build());
+        assertThat(afterLogin.statusCode()).isEqualTo(200);
+        String callback = location(get(JsonPath.read(afterLogin.body(), "$.redirectUrl")));
         assertThat(callback).startsWith(OAuthFixtures.REDIRECT_URI);
         var params = UriComponentsBuilder.fromUriString(callback).build().getQueryParams();
         return OAuth2AuthorizationResponse.success(params.getFirst("code"))
@@ -186,7 +199,7 @@ class EndToEndOidcTest {
                 .queryParam("post_logout_redirect_uri", OAuthFixtures.LOGOUT_URI)
                 .queryParam("state", "fim").encode().build().toUriString());
         assertThat(location(logout)).isEqualTo(OAuthFixtures.LOGOUT_URI + "?state=fim");
-        assertThat(location(get(authorizationRequest(spa).getAuthorizationRequestUri()))).endsWith("/login");
+        assertThat(location(get(authorizationRequest(spa).getAuthorizationRequestUri()))).isEqualTo(LOGIN_URL);
     }
 
     // CA-F1-06.1 pelo cliente genérico: sistema confidencial renova o token

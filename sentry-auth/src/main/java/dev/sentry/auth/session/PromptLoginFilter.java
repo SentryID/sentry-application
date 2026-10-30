@@ -1,4 +1,4 @@
-package dev.sentry.auth.web;
+package dev.sentry.auth.session;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

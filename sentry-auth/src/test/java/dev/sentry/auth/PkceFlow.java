@@ -24,8 +24,8 @@ public final class PkceFlow {
     }
 
     /**
-     * Abre a autorização, faz login na tela do Sentry e volta à autorização. A sessão SSO (Spring Session) segue no
-     * cookie {@code SESSION}, como num navegador.
+     * Abre a autorização, faz login pela API de sessão (como a tela do front-end faz) e retoma a autorização pela URL
+     * devolvida. A sessão SSO (Spring Session) segue no cookie {@code SESSION}, como num navegador.
      *
      * @return o cookie da sessão SSO e o {@code Location} final (o {@code redirect_uri} com {@code code} ou {@code error})
      */
@@ -33,12 +33,19 @@ public final class PkceFlow {
             throws Exception {
         MvcResult start = mockMvc.perform(get(URI.create(authorizeUrl)).accept("text/html")).andReturn();
         Cookie session = start.getResponse().getCookie(SESSION);
-        MvcResult login = mockMvc.perform(post("/login").cookie(session).with(csrf())
-                        .param("username", username).param("password", password)).andReturn();
+        MvcResult login = sessionLogin(mockMvc, session, username, password).andReturn();
         session = sessionAfter(login, session);
-        MvcResult resume = mockMvc.perform(get(URI.create(login.getResponse().getRedirectedUrl())).cookie(session))
-                .andReturn();
+        String redirectUrl = JsonPath.read(login.getResponse().getContentAsString(), "$.redirectUrl");
+        MvcResult resume = mockMvc.perform(get(URI.create(redirectUrl)).cookie(session)).andReturn();
         return new Result(sessionAfter(resume, session), resume.getResponse().getRedirectedUrl());
+    }
+
+    /** {@code POST /api/v1/session/login} com CSRF, como a tela de login do front-end envia. */
+    public static ResultActions sessionLogin(MockMvc mockMvc, Cookie session, String username, String password)
+            throws Exception {
+        var request = post("/api/v1/session/login").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"username\": \"" + username + "\", \"password\": \"" + password + "\"}");
+        return mockMvc.perform(session == null ? request : request.cookie(session));
     }
 
     /** Pede a autorização com uma sessão SSO já existente (sem passar pela tela). */

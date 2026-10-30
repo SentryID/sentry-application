@@ -67,7 +67,6 @@ public class SystemRegisteredClientRepository implements RegisteredClientReposit
                 .clientId(system.getExternalCode())
                 .clientName(system.getDescription())
                 .clientSecret(confidential ? system.getClientSecretHash() : null)
-                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
                 // RN-F1-03.2 e RN-F1-03.9: PKCE sempre, sem tela de consentimento
                 .clientSettings(ClientSettings.builder().requireProofKey(true).requireAuthorizationConsent(false).build())
@@ -90,6 +89,10 @@ public class SystemRegisteredClientRepository implements RegisteredClientReposit
             } else {
                 builder.postLogoutRedirectUri(redirectUri.uri());
             }
+        }
+        // sem URI de login não há para onde mandar o código: o sistema só usa o login direto e o refresh
+        if (system.getRedirectUris().stream().anyMatch(uri -> uri.type() == UriType.LOGIN)) {
+            builder.authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE);
         }
         if (system.getScopes() != null && !system.getScopes().isBlank()) {
             builder.scopes(scopes -> scopes.addAll(Arrays.asList(system.getScopes().trim().split("\\s+"))));

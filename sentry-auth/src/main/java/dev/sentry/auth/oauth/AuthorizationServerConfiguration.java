@@ -1,8 +1,7 @@
 package dev.sentry.auth.oauth;
 
-import dev.sentry.auth.web.LoginPageService;
-import dev.sentry.auth.web.PromptLoginFilter;
-import dev.sentry.auth.web.SsoLogout;
+import dev.sentry.auth.session.PromptLoginFilter;
+import dev.sentry.auth.session.SsoLogout;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,6 +14,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.config.Customizer;
@@ -37,6 +37,7 @@ import org.springframework.security.oauth2.server.authorization.token.OAuth2Refr
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.context.SecurityContextHolderFilter;
 import org.springframework.security.web.header.HeaderWriterFilter;
@@ -52,15 +53,13 @@ public class AuthorizationServerConfiguration {
     private static final List<String> GRANT_TYPES = List.of("authorization_code", "refresh_token");
     private static final List<String> CLIENT_AUTH_METHODS = List.of("client_secret_basic", "client_secret_post", "none");
     private static final String OFFLINE_ACCESS = "offline_access";
-    private static final String CONTENT_SECURITY_POLICY =
-            "default-src 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'";
     private static final Set<String> CACHEABLE_PATHS =
             Set.of("/.well-known/openid-configuration", "/.well-known/oauth-authorization-server", "/oauth2/jwks");
 
     @Bean
     @Order(1)
     SecurityFilterChain authorizationServerFilterChain(HttpSecurity http, UserInfoMapper userInfoMapper,
-            SsoLogout ssoLogout) throws Exception {
+            SsoLogout ssoLogout, @Value("${sentry.login-url}") String loginUrl) throws Exception {
         var authorizationServer = new OAuth2AuthorizationServerConfigurer();
         http.securityMatcher(authorizationServer.getEndpointsMatcher())
                 .with(authorizationServer, server -> server
@@ -82,10 +81,25 @@ public class AuthorizationServerConfiguration {
                                         .errorResponseHandler(ssoLogout::onError))))
                 .authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
                 .oauth2ResourceServer(resourceServer -> resourceServer.jwt(Customizer.withDefaults()))
+                // F1-04: sem sessão, o navegador vai para a tela de login do front-end; o pedido fica salvo na sessão
                 .exceptionHandling(exceptions -> exceptions.defaultAuthenticationEntryPointFor(
-                        new LoginUrlAuthenticationEntryPoint("/login"), new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
+                        new LoginUrlAuthenticationEntryPoint(loginUrl), new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
                 .addFilterBefore(new CacheablePublicMetadataFilter(), HeaderWriterFilter.class)
                 .addFilterAfter(new PromptLoginFilter(), SecurityContextHolderFilter.class);
+        return http.build();
+    }
+
+    /**
+     * API de sessão SSO para a tela de login do front-end, na mesma origem: a sessão vai no cookie {@code SESSION} e o
+     * CSRF no cookie {@code XSRF-TOKEN}, devolvido pelo front-end no cabeçalho {@code X-XSRF-TOKEN}.
+     */
+    @Bean
+    @Order(2)
+    SecurityFilterChain sessionApiFilterChain(HttpSecurity http) throws Exception {
+        http.securityMatcher("/api/v1/session/**")
+                .authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
+                .requestCache(cache -> cache.disable())
+                .csrf(csrf -> csrf.spa());
         return http.build();
     }
 
@@ -94,7 +108,7 @@ public class AuthorizationServerConfiguration {
      * sem sessão, também não há CSRF a proteger.
      */
     @Bean
-    @Order(2)
+    @Order(3)
     SecurityFilterChain directLoginFilterChain(HttpSecurity http) throws Exception {
         http.securityMatcher("/api/v1/auth/**")
                 .authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
@@ -104,22 +118,16 @@ public class AuthorizationServerConfiguration {
         return http.build();
     }
 
+    // o sentry-auth não tem telas: o resto é saúde, erros em JSON e a documentação da API
     @Bean
-    @Order(3)
-    SecurityFilterChain applicationFilterChain(HttpSecurity http, LoginPageService loginPageService) throws Exception {
+    @Order(4)
+    SecurityFilterChain applicationFilterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/actuator/health/**", "/error", "/css/**", SsoLogout.LOGGED_OUT_PATH,
-                                "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers("/actuator/health/**", "/error", "/v3/api-docs/**", "/swagger-ui/**",
+                                "/swagger-ui.html").permitAll()
                         .anyRequest().authenticated())
-                // F1-04: tela própria; os detalhes levam o sistema do fluxo, o IP e o User-Agent ao provedor
-                .formLogin(form -> form.loginPage("/login").permitAll()
-                        .authenticationDetailsSource(loginPageService::loginAttempt)
-                        .failureHandler((request, response, exception) -> {
-                            loginPageService.rememberFailedUsername(request);
-                            response.sendRedirect(request.getContextPath() + "/login?error");
-                        }))
-                // RN-F1-04.6: X-Frame-Options DENY e Cache-Control no-store já são o padrão do Spring Security
-                .headers(headers -> headers.contentSecurityPolicy(csp -> csp.policyDirectives(CONTENT_SECURITY_POLICY)));
+                .exceptionHandling(exceptions -> exceptions.authenticationEntryPoint(
+                        new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)));
         return http.build();
     }
 

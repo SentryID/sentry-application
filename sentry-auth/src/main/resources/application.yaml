@@ -37,6 +37,8 @@ management:
 sentry:
   # URL pública do sentry-auth, usada como issuer dos tokens a partir da F1-07 (RN-F0-04.5)
   issuer-url: ${SENTRY_ISSUER_URL:http://localhost:8081}
+  # tela de login do front-end (React), servida na mesma origem do sentry-auth por um proxy (F1-04)
+  login-url: ${SENTRY_LOGIN_URL:http://localhost:5173/login}
   # RN-F1-09.2: vida máxima da sessão SSO, mesmo com uso
   session:
     max-age: ${SENTRY_SESSION_MAX_AGE:12h}

@@ -46,15 +46,15 @@ Para um usuário entrar no sistema, ele precisa de **um papel ativo nesse sistem
 
 ## 2. Login pelo navegador (Authorization Code + PKCE)
 
-É o caminho padrão: a senha é digitada só na tela do Sentry.
+É o caminho padrão: a senha é digitada só na tela de login do Sentry, que é uma aplicação de front-end (React) servida na mesma origem do `sentry-auth` (seção 6). O `sentry-auth` não tem telas.
 
 1. A biblioteca lê a descoberta em `GET /.well-known/openid-configuration`.
 2. O navegador vai para `GET /oauth2/authorize` com `response_type=code`, `client_id`, `redirect_uri`, `scope`, `state`,
    `nonce` e PKCE (`code_challenge` com `code_challenge_method=S256`; PKCE é obrigatório para todos os clientes).
-3. Sem sessão no Sentry, o usuário vê a tela de login com o nome do sistema. Com sessão (SSO), o código volta sem pedir
-   senha; `prompt=login` força a senha mesmo assim.
+3. Sem sessão no Sentry, o navegador vai para a tela de login do front-end (`SENTRY_LOGIN_URL`). Com sessão (SSO), o
+   código volta sem pedir senha; `prompt=login` força a senha mesmo assim.
 4. O navegador volta ao `redirect_uri` com `code` e o mesmo `state`. Erros (`invalid_request`, `invalid_scope`) voltam
-   do mesmo jeito; `client_id` ou `redirect_uri` inválidos param numa página de erro do Sentry, sem redirecionar.
+   do mesmo jeito; `client_id` ou `redirect_uri` inválidos param num erro JSON (Problem Details), sem redirecionar.
 5. O sistema troca o código em `POST /oauth2/token` (`grant_type=authorization_code`, `code`, o mesmo `redirect_uri` e o
    `code_verifier`). Cliente confidencial se autentica com `client_secret_basic` ou `client_secret_post`; cliente público
    manda só o `client_id`. O código vale 60 segundos e uma única vez.
@@ -124,14 +124,66 @@ concedidos, lidos do banco no momento da chamada.
 ## 5. Logout
 
 `GET /connect/logout?id_token_hint=<id token>&post_logout_redirect_uri=<uri cadastrada>&state=<valor>` encerra a sessão
-SSO, revoga os refresh tokens emitidos nela e volta à URI com o `state`. Com uma URI não cadastrada, a sessão acaba e o
-navegador fica numa página do Sentry.
+SSO, revoga os refresh tokens emitidos nela e volta à URI com o `state`. Sem URI ou com uma URI não cadastrada, a sessão
+acaba e o navegador vai para a tela de login do front-end.
 
-## 6. Configuração do sentry-auth
+## 6. Tela de login (front-end)
+
+A tela de login é do front-end (React) e fica na **mesma origem** do `sentry-auth`, atrás de um proxy reverso: o cookie
+de sessão (`SESSION`, `HttpOnly`, `SameSite=Lax`) e o de CSRF (`XSRF-TOKEN`) valem para os dois. O fluxo:
+
+1. O `/oauth2/authorize` sem sessão redireciona para `SENTRY_LOGIN_URL` e guarda o pedido na sessão.
+2. A tela chama `GET /api/v1/session/context` → `{"clientId": "SYS001", "systemName": "Sistema de Exemplo"}` (campos
+   nulos sem fluxo em andamento). Essa chamada também entrega o cookie `XSRF-TOKEN`.
+3. A tela envia `POST /api/v1/session/login` com `{"username": "...", "password": "..."}` e o cabeçalho
+   `X-XSRF-TOKEN` com o valor do cookie `XSRF-TOKEN`.
+   - Sucesso: `200 {"redirectUrl": "https://auth.exemplo.com/oauth2/authorize?...&continue"}`. A tela faz
+     `window.location.assign(redirectUrl)` e o fluxo volta ao sistema com o código.
+   - Falha: `401` em Problem Details com `"detail": "Usuário ou senha inválidos"` (sempre a mesma mensagem).
+   - Sem o cabeçalho CSRF: `403`.
+4. `GET /api/v1/session/me` → `{"authenticated": true, "sub": "...", "username": "maria", "name": "Maria Silva"}`, ou
+   `{"authenticated": false}` sem sessão.
+5. `POST /api/v1/session/logout` (com `X-XSRF-TOKEN`) → `204`, encerra a sessão SSO. Para revogar os tokens de um sistema,
+   o sistema usa o `/connect/logout` (seção 5).
+
+```js
+const xsrf = () => document.cookie.match(/XSRF-TOKEN=([^;]+)/)?.[1];
+await fetch("/api/v1/session/context");                       // sistema que pediu o login + cookie XSRF-TOKEN
+const response = await fetch("/api/v1/session/login", {
+  method: "POST",
+  headers: { "Content-Type": "application/json", "X-XSRF-TOKEN": decodeURIComponent(xsrf()) },
+  body: JSON.stringify({ username, password })
+});
+if (response.ok) window.location.assign((await response.json()).redirectUrl);
+```
+
+O proxy encaminha para o `sentry-auth` os caminhos `/oauth2/`, `/.well-known/`, `/connect/`, `/userinfo` e `/api/`, e
+serve o React no resto. Exemplo com o Vite em desenvolvimento (`vite.config.js`), com o `sentry-auth` em
+`localhost:8081`:
+
+```js
+export default {
+  server: {
+    port: 5173,
+    proxy: Object.fromEntries(["/oauth2", "/.well-known", "/connect", "/userinfo", "/api"]
+      .map(path => [path, { target: "http://localhost:8081", xfwd: true }]))
+  }
+}
+```
+
+O proxy DEVE preservar o cabeçalho `Host` (o Vite preserva por padrão; no nginx, `proxy_set_header Host $host`), porque a
+URL que retoma a autorização é montada a partir dele.
+
+Nesse caso, `SENTRY_ISSUER_URL=http://localhost:5173` (o issuer é a origem pública, a do proxy) e
+`SENTRY_LOGIN_URL=http://localhost:5173/login`. Em produção, o mesmo vale com nginx ou outro proxy, por exemplo
+`https://auth.exemplo.com` servindo o React e encaminhando esses caminhos ao `sentry-auth`.
+
+## 7. Configuração do sentry-auth
 
 | Variável | Padrão | Uso |
 | --- | --- | --- |
 | `SENTRY_ISSUER_URL` | `http://localhost:8081` | URL pública; vira o `iss` dos tokens |
+| `SENTRY_LOGIN_URL` | `http://localhost:5173/login` | Tela de login do front-end, na mesma origem (seção 6) |
 | `SENTRY_JWT_SIGNING_KEY` | — | Chave privada RSA (PEM, PKCS#8), o conteúdo ou `file:/caminho`. Obrigatória em produção |
 | `SENTRY_JWT_PREVIOUS_KEY` | — | Chave anterior, mantida no JWKS durante a troca |
 | `SENTRY_JWT_GENERATE_IF_MISSING` | `false` | Só em desenvolvimento: gera uma chave temporária a cada subida |

@@ -2,7 +2,7 @@
 
 Aplicação open source de autenticação e autorização. Módulos:
 
-- `sentry-auth` (porta 8081): autenticação.
+- `sentry-auth` (porta 8081): autenticação (OAuth 2.1 / OpenID Connect), só API: a tela de login é um front-end separado, servido na mesma origem por um proxy.
 - `sentry-backend` (porta 8080): cadastro de organizações, sistemas, usuários e permissões.
 - `sentry-api`: código compartilhado (entidades, serviços, migrações Flyway).
 

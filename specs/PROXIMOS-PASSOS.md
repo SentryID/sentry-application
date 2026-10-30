@@ -72,7 +72,15 @@ Primeira etapa, feita:
 - Regras que estavam em controllers e foram para services: no `LoginController`, a exigência de HTTPS fora de localhost, a leitura do HTTP Basic e a montagem do erro OAuth (agora no `LoginService` e no handler global); no `LoginPageController`, a busca do sistema que pediu o login e o username da última falha (agora no `LoginPageService`, que também atende a configuração do formulário). Os controllers do `sentry-backend` já só delegavam.
 - Um `@RestControllerAdvice` por aplicação: `dev.sentry.auth.GlobalExceptionHandler` (erros OAuth do login direto) e `dev.sentry.backend.GlobalExceptionHandler` (Problem Details, antes ligado por configuração).
 
-Pendente de decisão do usuário: como o React faz login sem as telas (próxima etapa), e se até as anotações Bean Validation dos DTOs (`@Valid`, `@NotBlank`) devem sair para os services.
+Segunda etapa, feita (decisão do usuário: o React hospeda a tela do OIDC):
+
+- O `sentry-auth` não tem mais telas nem Thymeleaf: nenhum endpoint devolve HTML. Os erros encaminhados para `/error` (como `client_id` ou `redirect_uri` inválidos no `/oauth2/authorize`) saem em Problem Details, em português (`ErrorJsonController` + `ErrorDetailsService`).
+- OIDC headless: sem sessão, o `/oauth2/authorize` (e o `prompt=login`) redireciona para `SENTRY_LOGIN_URL`, a tela do React na mesma origem, com o pedido guardado na sessão.
+- API de sessão em `dev.sentry.auth.session` (`SessionController`, `SessionService`): `GET /api/v1/session/context`, `POST /api/v1/session/login` (devolve o `redirectUrl` que retoma a autorização), `GET /api/v1/session/me` e `POST /api/v1/session/logout`. Cookie `SESSION` e CSRF por cookie `XSRF-TOKEN` + cabeçalho `X-XSRF-TOKEN`.
+- `/connect/logout` sem URI válida redireciona para `SENTRY_LOGIN_URL`, sem página.
+- O contrato da API e a montagem do proxy (Vite/nginx) estão na seção 6 de `docs/integracao.md`. O `examples/spa` continua como sistema cliente; precisa da tela do React no ar.
+
+Pendente de decisão do usuário: se até as anotações Bean Validation dos DTOs (`@Valid`, `@NotBlank`) devem sair para os services.
 
 ## Próximo passo: revisar a spec da Fase 2
 

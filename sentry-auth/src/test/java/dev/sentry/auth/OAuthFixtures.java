@@ -10,6 +10,8 @@ public final class OAuthFixtures {
     public static final String PASSWORD = "S3nha!forte";
     public static final String REDIRECT_URI = "http://127.0.0.1:3000/callback";
     public static final String LOGOUT_URI = "http://127.0.0.1:3000/";
+    /** Tela de login do front-end ({@code sentry.login-url}), para onde vai quem não tem sessão. */
+    public static final String LOGIN_URL = "http://localhost:5173/login";
     /** PKCE do exemplo da RFC 7636: o desafio S256 de {@link #CODE_VERIFIER}. */
     public static final String CODE_VERIFIER = "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk";
     public static final String CODE_CHALLENGE = "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM";

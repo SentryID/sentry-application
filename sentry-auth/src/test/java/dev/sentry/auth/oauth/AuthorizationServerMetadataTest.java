@@ -65,6 +65,22 @@ class AuthorizationServerMetadataTest {
                 .andExpect(jsonPath("$.keys[0].d").doesNotExist());
     }
 
+    // sistema sem URI de login (como o SENTRY do bootstrap) recusa o fluxo PKCE com 400, não com erro interno
+    @Test
+    void systemWithoutRedirectUriRejectsAuthorization() throws Exception {
+        jdbcTemplate.update("""
+                INSERT INTO organizations (name, external_code, uuid, is_active, is_deleted)
+                VALUES ('Org Sem Uri', 'ORG_NO_URI', gen_random_uuid(), TRUE, FALSE)""");
+        jdbcTemplate.update("""
+                INSERT INTO systems (id_organization, external_code, client_type, uuid, is_active, is_deleted)
+                SELECT id_organization, 'SYS_NO_URI', 'PUBLIC', gen_random_uuid(), TRUE, FALSE
+                FROM organizations WHERE external_code = 'ORG_NO_URI'""");
+
+        mockMvc.perform(get(URI.create(OAuthFixtures.authorizeUrl("SYS_NO_URI", "openid"))).accept("text/html"))
+                .andExpect(status().isBadRequest())
+                .andExpect(header().doesNotExist("Location"));
+    }
+
     // CA-F1-01.3, RN-F1-03.3: cliente desativado não recebe redirecionamento
     @Test
     void inactiveSystemCannotStartAuthorization() throws Exception {

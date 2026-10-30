@@ -1,4 +1,4 @@
-package dev.sentry.auth.web;
+package dev.sentry.auth.session;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

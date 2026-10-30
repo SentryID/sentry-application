@@ -1,4 +1,4 @@
-package dev.sentry.auth.web;
+package dev.sentry.auth.session;
 
 import static dev.sentry.auth.OAuthFixtures.CODE_VERIFIER;
 import static dev.sentry.auth.OAuthFixtures.LOGOUT_URI;
@@ -82,7 +82,7 @@ class SsoSessionTest {
     }
 
     private boolean asksForPassword(Cookie session, String clientId) throws Exception {
-        return "/login".equals(PkceFlow.authorize(mockMvc, session, authorizeUrl(clientId, "openid")));
+        return OAuthFixtures.LOGIN_URL.equals(PkceFlow.authorize(mockMvc, session, authorizeUrl(clientId, "openid")));
     }
 
     // RN-F1-09.1, RN-F1-09.3, RN-F1-09.4: cookie HttpOnly e SameSite=Lax, renovado no login, sessão no PostgreSQL
@@ -148,9 +148,8 @@ class SsoSessionTest {
                         .cookie(login.session()))
                 .andReturn().getResponse().getRedirectedUrl();
 
-        assertThat(location).isEqualTo(SsoLogout.LOGGED_OUT_PATH);
+        assertThat(location).isEqualTo(OAuthFixtures.LOGIN_URL);
         assertThat(asksForPassword(login.session(), "SSO_A")).isTrue();
-        mockMvc.perform(get(SsoLogout.LOGGED_OUT_PATH)).andExpect(status().isOk());
     }
 
     // CA-F1-09.4

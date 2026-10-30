@@ -158,7 +158,7 @@ class LoginTest {
 
         assertThat(response.getCookie(PkceFlow.SESSION)).isNull();
         assertThat(PkceFlow.authorizeAnonymously(mockMvc, OAuthFixtures.authorizeUrl("DIR_PUB", "openid")))
-                .isEqualTo("/login");
+                .isEqualTo(OAuthFixtures.LOGIN_URL);
     }
 
     // CA-F1-11.6

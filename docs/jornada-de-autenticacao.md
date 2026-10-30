@@ -472,9 +472,8 @@ Location: https://portal.exemplo.com/?state=fim
 O Sentry encerra a sessão e revoga os refresh tokens emitidos nela. A `post_logout_redirect_uri` tem de estar
 cadastrada; se não estiver, a sessão acaba do mesmo jeito e o navegador vai para a tela de login do Sentry.
 
-A tela de login também pode encerrar só a sessão no Sentry, com `POST /api/v1/session/logout` (com o cabeçalho
-`X-XSRF-TOKEN`), que responde `204`. Esse caminho não revoga os refresh tokens dos sistemas; para isso, use o
-`/connect/logout` acima ou o `/oauth2/revoke`.
+A tela de login do Sentry também pode sair, com `POST /api/v1/session/logout` (com o cabeçalho `X-XSRF-TOKEN`), que
+responde `204`. O efeito é o mesmo: a sessão acaba e os refresh tokens emitidos nela são revogados.
 
 ### Quanto dura a sessão no Sentry
 

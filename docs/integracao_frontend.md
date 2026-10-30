@@ -146,8 +146,8 @@ de sessão (`SESSION`, `HttpOnly`, `SameSite=Lax`) e o de CSRF (`XSRF-TOKEN`) va
    - Sem o cabeçalho CSRF: `403`.
 4. `GET /api/v1/session/me` → `{"authenticated": true, "sub": "...", "username": "maria", "name": "Maria Silva"}`, ou
    `{"authenticated": false}` sem sessão.
-5. `POST /api/v1/session/logout` (com `X-XSRF-TOKEN`) → `204`, encerra a sessão SSO. Para revogar os tokens de um sistema,
-   o sistema usa o `/connect/logout` (seção 5).
+5. `POST /api/v1/session/logout` (com `X-XSRF-TOKEN`) → `204`: encerra a sessão SSO e revoga os refresh tokens emitidos
+   nela, como o `/connect/logout` (seção 5).
 
 ```js
 const xsrf = () => document.cookie.match(/XSRF-TOKEN=([^;]+)/)?.[1];

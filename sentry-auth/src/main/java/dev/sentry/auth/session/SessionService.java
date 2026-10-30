@@ -42,13 +42,15 @@ public class SessionService {
     private final SecurityContextRepository securityContextRepository = new HttpSessionSecurityContextRepository();
     private final SystemRepository systemRepository;
     private final UserRepository userRepository;
+    private final SsoLogout ssoLogout;
 
     public SessionService(List<AuthenticationProvider> authenticationProviders, SystemRepository systemRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository, SsoLogout ssoLogout) {
         // os mesmos provedores do login direto: o LDAP, quando entrar, vale aqui sem mudar este código (RN-F1-02.7)
         this.authenticationManager = new ProviderManager(authenticationProviders);
         this.systemRepository = systemRepository;
         this.userRepository = userRepository;
+        this.ssoLogout = ssoLogout;
     }
 
     /**
@@ -112,12 +114,16 @@ public class SessionService {
     }
 
     /**
-     * Encerra a sessão SSO. Os refresh tokens dos sistemas continuam válidos; para revogá-los, o sistema usa o
-     * {@code /connect/logout} com o {@code id_token_hint} (RN-F1-09.6).
+     * Encerra a sessão SSO e revoga as autorizações emitidas nela, com os refresh tokens, como o
+     * {@code /connect/logout} faz (RN-F1-09.6).
      *
      * @param request requisição com o cookie da sessão
      */
     public void logout(HttpServletRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && !(authentication instanceof AnonymousAuthenticationToken)) {
+            ssoLogout.revokeSessionTokens(request, authentication.getName());
+        }
         HttpSession session = request.getSession(false);
         if (session != null) {
             session.invalidate();

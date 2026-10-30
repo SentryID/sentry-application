@@ -4,6 +4,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,17 +96,45 @@ public class SsoLogout {
             return;
         }
         String sid = authorization.getToken(OidcIdToken.class).getToken().getClaimAsString("sid");
+        if (sid == null) {
+            authorizationService.remove(authorization);
+            return;
+        }
+        revokeBySid(authorization.getPrincipalName(), sid);
+    }
+
+    /**
+     * RN-F1-09.6: revoga as autorizações (e os refresh tokens delas) emitidas na sessão SSO da requisição, para o logout
+     * feito pela tela do front-end ({@code POST /api/v1/session/logout}), que não tem ID token. O {@code sid} dos ID
+     * tokens é o SHA-256 do id da sessão em Base64 URL, como o Authorization Server o calcula.
+     *
+     * @param request requisição com o cookie da sessão a encerrar
+     * @param principalName {@code sub} do usuário da sessão
+     */
+    public void revokeSessionTokens(HttpServletRequest request, String principalName) {
+        HttpSession session = request.getSession(false);
+        if (session == null || principalName == null) {
+            return;
+        }
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(session.getId().getBytes(StandardCharsets.US_ASCII));
+            revokeBySid(principalName, Base64.getUrlEncoder().withoutPadding().encodeToString(digest));
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private void revokeBySid(String principalName, String sid) {
         // ponytail: busca o sid no JSON dos claims gravados; se o volume crescer, guardar o sid numa coluna indexada
-        List<String> ids = sid == null ? List.of(authorization.getId()) : jdbcTemplate.queryForList(
+        List<String> ids = jdbcTemplate.queryForList(
                 "SELECT id FROM oauth2_authorization WHERE principal_name = ? AND oidc_id_token_metadata LIKE ?",
-                String.class, authorization.getPrincipalName(), "%\"sid\":\"" + sid + "\"%");
+                String.class, principalName, "%\"sid\":\"" + sid + "\"%");
         for (String id : ids) {
             OAuth2Authorization sessionAuthorization = authorizationService.findById(id);
             if (sessionAuthorization != null) {
                 authorizationService.remove(sessionAuthorization);
             }
         }
-        log.atInfo().addKeyValue("sub", authorization.getPrincipalName()).addKeyValue("revoked", ids.size())
-                .log("Logout da sessão SSO");
+        log.atInfo().addKeyValue("sub", principalName).addKeyValue("revoked", ids.size()).log("Logout da sessão SSO");
     }
 }

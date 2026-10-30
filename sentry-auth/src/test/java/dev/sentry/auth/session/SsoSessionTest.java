@@ -5,7 +5,9 @@ import static dev.sentry.auth.OAuthFixtures.LOGOUT_URI;
 import static dev.sentry.auth.OAuthFixtures.PASSWORD;
 import static dev.sentry.auth.OAuthFixtures.authorizeUrl;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -136,6 +138,23 @@ class SsoSessionTest {
         assertThat(asksForPassword(login.session(), "SSO_A")).isTrue();
         PkceFlow.refresh(mockMvc, "SSO_A", SECRET, PkceFlow.json(tokens, "$.refresh_token"))
                 .andExpect(jsonPath("$.error").value("invalid_grant"));
+    }
+
+    // RN-F1-09.6: o logout pela tela do front-end também revoga os refresh tokens emitidos na sessão
+    @Test
+    void sessionApiLogoutRevokesTokensOfTheSession() throws Exception {
+        PkceFlow.Result login = loginOnA();
+        String refreshToken = PkceFlow.json(exchangeOnA(login.code()), "$.refresh_token");
+
+        mockMvc.perform(post("/api/v1/session/logout").cookie(login.session()).with(csrf()))
+                .andExpect(status().isNoContent());
+
+        PkceFlow.refresh(mockMvc, "SSO_A", SECRET, refreshToken)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("invalid_grant"));
+        mockMvc.perform(get("/api/v1/session/me").cookie(login.session()))
+                .andExpect(jsonPath("$.authenticated").value(false));
+        assertThat(asksForPassword(login.session(), "SSO_A")).isTrue();
     }
 
     // CA-F1-09.3

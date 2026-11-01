@@ -41,6 +41,12 @@
 			<artifactId>spring-boot-starter-session-jdbc</artifactId>
 		</dependency>
 
+		<!-- confere a senha dos usuários LDAP com um bind (RN-F1-02.7) -->
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-ldap</artifactId>
+		</dependency>
+
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
@@ -66,6 +72,12 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webmvc-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<!-- servidor LDAP em memória para o teste de integração do LDAP -->
+		<dependency>
+			<groupId>com.unboundid</groupId>
+			<artifactId>unboundid-ldapsdk</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

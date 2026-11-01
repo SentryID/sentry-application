@@ -72,8 +72,9 @@ public interface UserRest {
             AuthenticationType authenticationType,
             @Schema(description = "Login do usuário", example = "maria.silva", requiredMode = RequiredMode.REQUIRED)
             @NotBlank String username,
-            @Schema(description = "Senha do usuário", example = "S3nh@Forte", requiredMode = RequiredMode.REQUIRED)
-            @NotBlank String password,
+            @Schema(description = "Senha do usuário; obrigatória para DATABASE e proibida para LDAP",
+                    example = "S3nh@Forte", requiredMode = RequiredMode.NOT_REQUIRED)
+            String password,
             @Schema(description = "E-mail do usuário", example = "maria@sentry.dev", requiredMode = RequiredMode.REQUIRED)
             @NotBlank @Email String email,
             @Schema(description = "Indica se o usuário está ativo", example = "true", requiredMode = RequiredMode.REQUIRED)

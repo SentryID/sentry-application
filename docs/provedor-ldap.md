@@ -115,10 +115,32 @@ E no `sentry-auth/src/main/resources/application.yaml`, dentro de `sentry:`:
 
 Use `ldaps://` (ou StartTLS) em produção: a senha do usuário vai no bind.
 
-Se o seu diretório não permite montar o DN pelo username (ex.: Active Directory com usuários em várias OUs), troque o
-`userDnPattern` por uma busca: `FilterBasedLdapUserSearch` com um usuário de serviço, passado em
-`BindAuthenticator.setUserSearch(...)`. O usuário e a senha de serviço também entram no `LdapProperties`, e o
-`toString` deve esconder a senha (RN-F0-02.6), como no `BootstrapProperties`.
+### Active Directory (busca com conta de serviço)
+
+No Active Directory, com usuários em várias OUs, não dá para montar o DN pelo username. Com
+`SENTRY_LDAP_USER_SEARCH_FILTER` preenchido, uma conta de serviço busca o usuário (`FilterBasedLdapUserSearch`) e o
+bind é feito com o DN encontrado e a senha digitada. Nesse modo o `user-dn-pattern` é ignorado. O `toString` do
+`LdapProperties` esconde a senha da conta de serviço (RN-F0-02.6).
+
+A base da busca é **relativa** ao `SENTRY_LDAP_BASE`. Por exemplo, para buscar em `OU=Kyros,DC=kyros,DC=com,DC=br`
+pelo `sAMAccountName`:
+
+```env
+SENTRY_LDAP_URL=ldaps://dc01.kyros.com.br:636
+SENTRY_LDAP_BASE=DC=kyros,DC=com,DC=br
+SENTRY_LDAP_USER_SEARCH_BASE=OU=Kyros
+SENTRY_LDAP_USER_SEARCH_FILTER=(&(objectClass=person)(sAMAccountName={0}))
+SENTRY_LDAP_MANAGER_DN=svc-sentry@kyros.com.br
+SENTRY_LDAP_MANAGER_PASSWORD=...
+```
+
+- `{0}` é o username cadastrado no Sentry, que deve ser igual ao `sAMAccountName`. Ele é escapado no filtro.
+- A conta de serviço só precisa de leitura. O AD aceita o UPN (`svc@dominio`) ou o DN completo.
+- Conta desabilitada (`userAccountControl`) ou senha expirada no AD fazem o bind falhar, então o login é recusado
+  sem regra extra. Nome, e-mail e grupos não são lidos do AD: ficam no cadastro do Sentry e nos papéis em
+  `role_users`.
+- Se o certificado do `ldaps://` for de uma CA interna, a JVM do `sentry-auth` precisa confiar nela
+  (`-Djavax.net.ssl.trustStore=...`).
 
 ## Passo 3 — Os beans do LDAP
 
@@ -295,10 +317,15 @@ username no Sentry como `LDAP`, com papel em um sistema, e confira:
 
 ## Checklist
 
-- [ ] `spring-security-ldap` no `sentry-auth/pom.xml`
-- [ ] `LdapProperties` e `sentry.ldap.*` no `application.yaml`
-- [ ] `LdapConfiguration` condicionada a `sentry.ldap.url`
-- [ ] `LdapCredentialVerifier` com `type() == LDAP`, sem lançar exceção
-- [ ] `POST /users` aceitando usuário `LDAP` sem senha
-- [ ] Testes unitários do verificador e do `UserService`
-- [ ] `ldaps://` e *timeouts* configurados em produção
+O LDAP já está implementado no `sentry-auth` (pacote `dev.sentry.auth.provider.ldap`). Para ligá-lo, preencha
+`SENTRY_LDAP_URL` e `SENTRY_LDAP_BASE` (e, se preciso, `SENTRY_LDAP_USER_DN_PATTERN`, `SENTRY_LDAP_CONNECT_TIMEOUT` e
+`SENTRY_LDAP_READ_TIMEOUT`, padrão `5s`).
+
+- [x] `spring-security-ldap` no `sentry-auth/pom.xml`
+- [x] `LdapProperties` e `sentry.ldap.*` no `application.yaml`, com *timeouts* de conexão e leitura
+- [x] `LdapConfiguration` condicionada a `sentry.ldap.url`
+- [x] `LdapCredentialVerifier` com `type() == LDAP`, sem lançar exceção
+- [x] `POST /users` aceitando usuário `LDAP` sem senha (senha enviada para `LDAP` é recusada com `400`) e `PUT /users/{id}`
+  apagando o hash quando o usuário passa a ser `LDAP`
+- [x] Testes unitários do verificador e do `UserService`, e integração com um LDAP em memória (UnboundID)
+- [ ] `ldaps://` configurado em produção

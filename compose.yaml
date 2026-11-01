@@ -37,6 +37,14 @@ services:
       SENTRY_JWT_PREVIOUS_KEY: ${SENTRY_JWT_PREVIOUS_KEY:-}
       # ambiente local: sem chave configurada, gera uma temporária a cada subida (RN-F1-07.4)
       SENTRY_JWT_GENERATE_IF_MISSING: ${SENTRY_JWT_GENERATE_IF_MISSING:-true}
+      # LDAP que confere a senha dos usuários LDAP; sem url, fica desligado (RN-F1-02.7)
+      SENTRY_LDAP_URL: ${SENTRY_LDAP_URL:-}
+      SENTRY_LDAP_BASE: ${SENTRY_LDAP_BASE:-}
+      SENTRY_LDAP_USER_DN_PATTERN: ${SENTRY_LDAP_USER_DN_PATTERN:-uid={0},ou=people}
+      SENTRY_LDAP_USER_SEARCH_BASE: ${SENTRY_LDAP_USER_SEARCH_BASE:-}
+      SENTRY_LDAP_USER_SEARCH_FILTER: ${SENTRY_LDAP_USER_SEARCH_FILTER:-}
+      SENTRY_LDAP_MANAGER_DN: ${SENTRY_LDAP_MANAGER_DN:-}
+      SENTRY_LDAP_MANAGER_PASSWORD: ${SENTRY_LDAP_MANAGER_PASSWORD:-}
       # SPRING_PROFILES_ACTIVE=dev aplica os dados de exemplo (db/dev), usados por examples/spa
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-}
     ports:

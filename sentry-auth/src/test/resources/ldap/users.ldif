@@ -1,0 +1,25 @@
+dn: dc=sentry,dc=dev
+objectClass: top
+objectClass: domain
+dc: sentry
+
+dn: ou=people,dc=sentry,dc=dev
+objectClass: top
+objectClass: organizationalUnit
+ou: people
+
+# OU aninhada, como no Active Directory: só a busca acha o usuário sem saber a OU
+dn: ou=ti,ou=people,dc=sentry,dc=dev
+objectClass: top
+objectClass: organizationalUnit
+ou: ti
+
+dn: uid=maria.silva,ou=ti,ou=people,dc=sentry,dc=dev
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: maria.silva
+cn: Maria Silva
+sn: Silva
+userPassword: S3nha!ldap
